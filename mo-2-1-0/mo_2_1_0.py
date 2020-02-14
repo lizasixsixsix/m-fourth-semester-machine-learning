@@ -24,8 +24,29 @@ http://yaroslavvb.blogspot.sg/2011/09/notmnist-dataset.html
 ### Задание 1
 
 Загрузите данные и отобразите на экране несколько из изображений с помощью языка Python.
+"""
 
-### Задание 2
+import pandas as pd
+
+SMALL_DS_URL = 'https://commondatastorage.googleapis.com/books1000/notMNIST_small.tar.gz'
+
+# Commented out IPython magic to ensure Python compatibility.
+# %matplotlib inline
+
+import matplotlib.pyplot as plt
+
+plt.style.use('seaborn-white')
+
+fig = plt.figure()
+
+fig.subplots_adjust(hspace = 0.4, wspace = 0.4)
+
+for i in range(1, 7):
+    ax = fig.add_subplot(2, 3, i)
+    ax.axis('off')
+    ax.text(0.5, 0.5, str((2, 3, i)), fontsize = 18, ha = 'center')
+
+"""### Задание 2
 
 Проверьте, что классы являются сбалансированными, т.е. количество изображений, принадлежащих каждому из классов, примерно одинаково (в данной задаче 10 классов).
 
