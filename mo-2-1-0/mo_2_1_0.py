@@ -26,31 +26,119 @@ http://yaroslavvb.blogspot.sg/2011/09/notmnist-dataset.html
 Загрузите данные и отобразите на экране несколько из изображений с помощью языка Python.
 """
 
-import pandas as pd
-
 SMALL_DS_URL = 'https://commondatastorage.googleapis.com/books1000/notMNIST_small.tar.gz'
+LARGE_DS_URL = 'https://commondatastorage.googleapis.com/books1000/notMNIST_large.tar.gz'
 
 # Commented out IPython magic to ensure Python compatibility.
 # %matplotlib inline
 
 import matplotlib.pyplot as plt
 
-plt.style.use('seaborn-white')
+from urllib.request import urlretrieve
+import tarfile
+import os
 
-fig = plt.figure()
+def tar_to_dir(_tar_url, _key):
 
-fig.subplots_adjust(hspace = 0.4, wspace = 0.4)
+    local_file_name_ = 'dataset_' + _key + '.f'    
+    dir_name_ = 'dataset_' + _key
 
-for i in range(1, 7):
-    ax = fig.add_subplot(2, 3, i)
-    ax.axis('off')
-    ax.text(0.5, 0.5, str((2, 3, i)), fontsize = 18, ha = 'center')
+    urlretrieve(_tar_url, local_file_name_)
+
+    tar = tarfile.open(local_file_name_)
+    tar.extractall(dir_name_)
+
+    os.remove(local_file_name_)
+
+    return dir_name_
+
+from glob import glob
+
+def get_subdirs(_dir_name):
+
+    inner_dir_ = [x[0] for x in os.walk(_dir_name)][1]
+
+    subdir_pattern_ = os.path.join(inner_dir_, '*')
+
+    level_3_ = sorted(glob(subdir_pattern_))
+
+    return level_3_
+
+import cv2
+import os
+import shutil
+
+def subdirs_to_img_dict(_subdirs, _dir_name, _img_dict):
+
+    for subdir_ in _subdirs:
+        images_ = []
+
+        for imagefile_ in os.listdir(subdir_):
+            imagepath_ = os.path.join(subdir_, imagefile_)
+
+            images_.append(cv2.imread(imagepath_))
+
+        key_ = os.path.basename(os.path.normpath(subdir_))
+        
+        _img_dict[key_] = images_
+
+    shutil.rmtree(_dir_name)
+
+import random
+
+def get_examples(_img_dict):
+
+    examples_ = []
+
+    for v in _img_dict.values():
+        examples_.append(v[random.randrange(len(v))])
+
+    return examples_
+
+def print_examples(_examples):
+
+    fig = plt.figure(figsize=(16, 6))
+
+    for i, img in enumerate(_examples):
+        ax = fig.add_subplot(2, 5, i + 1)
+        ax.axis('off')
+        ax.imshow(img)
+
+    plt.show()
+
+def tar_to_img_dict(_tar_url, _img_dict, _key):
+    
+    dir_name_ = tar_to_dir(_tar_url, _key)
+
+    subdirs_ = get_subdirs(dir_name_)
+
+    subdirs_to_img_dict(subdirs_, dir_name_, _img_dict)
+
+    examples_ = get_examples(_img_dict)
+
+    print_examples(examples_)
+
+small_imgs = {}
+
+tar_to_img_dict(SMALL_DS_URL, small_imgs, 'small')
+
+large_imgs = {}
+
+tar_to_img_dict(LARGE_DS_URL, large_imgs, 'large')
 
 """### Задание 2
 
 Проверьте, что классы являются сбалансированными, т.е. количество изображений, принадлежащих каждому из классов, примерно одинаково (в данной задаче 10 классов).
+"""
 
-### Задание 3
+def print_balance(_dict):
+    print(*[k + ': ' + str(len(v)) for k, v in _dict.items()], sep = '    ')
+
+print_balance(small_imgs)
+
+print_balance(large_imgs)
+
+"""### Задание 3
 
 Разделите данные на три подвыборки: обучающую (200 тыс. изображений), валидационную (10 тыс. изображений) и контрольную (тестовую) (19 тыс. изображений).
 
