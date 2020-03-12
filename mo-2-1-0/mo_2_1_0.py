@@ -52,101 +52,220 @@ def tar_to_dir(_tar_url, _key):
 
     return dir_name_
 
-from glob import glob
+def get_examples(_dataframe, _label_column_name, _data_column_name):
 
-def get_subdirs(_dir_name):
+    n_ = _dataframe[_label_column_name].nunique()
 
-    inner_dir_ = [x[0] for x in os.walk(_dir_name)][1]
-
-    subdir_pattern_ = os.path.join(inner_dir_, '*')
-
-    level_3_ = sorted(glob(subdir_pattern_))
-
-    return level_3_
-
-import cv2
-import os
-import shutil
-
-def subdirs_to_img_dict(_subdirs, _dir_name, _img_dict):
-
-    for subdir_ in _subdirs:
-        images_ = []
-
-        for imagefile_ in os.listdir(subdir_):
-            imagepath_ = os.path.join(subdir_, imagefile_)
-
-            images_.append(cv2.imread(imagepath_))
-
-        key_ = os.path.basename(os.path.normpath(subdir_))
-        
-        _img_dict[key_] = images_
-
-    shutil.rmtree(_dir_name)
-
-import random
-
-def get_examples(_img_dict):
-
-    examples_ = []
-
-    for v in _img_dict.values():
-        examples_.append(v[random.randrange(len(v))])
+    examples_ = _dataframe.sample(n_)[_data_column_name]
 
     return examples_
 
+from math import ceil
+import numpy as np
+
 def print_examples(_examples):
 
-    fig = plt.figure(figsize=(16, 6))
+    fig = plt.figure(figsize = (16, 6))
 
-    for i, img in enumerate(_examples):
-        ax = fig.add_subplot(2, 5, i + 1)
+    height_ = 2
+    width_ = ceil(_examples.count() / height_)
+    
+    for i, item_ in enumerate(_examples):
+
+        ax = fig.add_subplot(height_, width_, i + 1)
         ax.axis('off')
-        ax.imshow(img)
+        ax.imshow(item_, cmap = 'gray', interpolation = 'none')
 
     plt.show()
 
-def tar_to_img_dict(_tar_url, _img_dict, _key):
+from imageio import imread
+import pandas as pd
+
+def image_to_array(_image):  
+    try:
+        array_ = imread(_image)
+
+        return True, array_
+    except:
+        return False, None
+
+def get_inner_dir(_dir_path):
+    
+    return [x[0] for x in os.walk(_dir_path)][1]
+
+def remove_duplicates(_dataframe, _data_column_name):
+
+   return _dataframe.loc[_dataframe[_data_column_name].astype(str).drop_duplicates().index]
+
+def dir_to_dataframe(_dir_path):
+
+    dataframes_ = []
+
+    inner_dir_path_ = get_inner_dir(_dir_path)
+
+    for subdir_ in sorted(os.listdir(inner_dir_path_)):
+        
+        letter_ = subdir_
+
+        data = []
+
+        files = os.listdir(os.path.join(inner_dir_path_, subdir_))
+
+        for f in files:
+            file_path_ = os.path.join(inner_dir_path_, subdir_, f)
+            
+            can_read_, im = image_to_array(file_path_)
+
+            if can_read_:
+                data.append(im)
+
+        g = [letter_] * len(data)
+
+        e = np.array(data)
+
+        h = pd.DataFrame()
+
+        h['data'] = data
+        h['label'] = letter_
+
+        dataframes_.append(h)
+
+    result = pd.concat(dataframes_, ignore_index = True)
+
+    unique_ = remove_duplicates(result, 'data')
+
+    return unique_
+
+def tar_to_dataframe(_tar_url, _key):
     
     dir_name_ = tar_to_dir(_tar_url, _key)
 
-    subdirs_ = get_subdirs(dir_name_)
+    inner_dir_ = get_inner_dir(dir_name_)
 
-    subdirs_to_img_dict(subdirs_, dir_name_, _img_dict)
+    dataframe_ = dir_to_dataframe(dir_name_)
 
-    examples_ = get_examples(_img_dict)
+    examples_ = get_examples(dataframe_, 'label', 'data')
 
     print_examples(examples_)
 
-small_imgs = {}
+    return dataframe_
 
-tar_to_img_dict(SMALL_DS_URL, small_imgs, 'small')
+small_dataframe = tar_to_dataframe(SMALL_DS_URL, 'small')
 
-large_imgs = {}
-
-tar_to_img_dict(LARGE_DS_URL, large_imgs, 'large')
+large_dataframe = tar_to_dataframe(LARGE_DS_URL, 'large')
 
 """### Задание 2
 
 Проверьте, что классы являются сбалансированными, т.е. количество изображений, принадлежащих каждому из классов, примерно одинаково (в данной задаче 10 классов).
 """
 
-def print_balance(_dict):
-    print(*[k + ': ' + str(len(v)) for k, v in _dict.items()], sep = '    ')
+def print_balance(_dataframe, _label_column_name):
+    
+    values_ = _dataframe[_label_column_name].value_counts().sort_values(ascending = False)
 
-print_balance(small_imgs)
+    print(('{:>10}' * len(values_)).format(*values_))
 
-print_balance(large_imgs)
+print_balance(small_dataframe, 'label')
+
+print_balance(large_dataframe, 'label')
 
 """### Задание 3
 
 Разделите данные на три подвыборки: обучающую (200 тыс. изображений), валидационную (10 тыс. изображений) и контрольную (тестовую) (19 тыс. изображений).
+"""
 
-### Задание 4
+def split(_dataframe, _n_train, _n_test, _n_val):
+
+    assert _dataframe.shape[0] >= _n_train + _n_test + _n_val
+
+    to_be_split_ = _dataframe.copy(deep = True)
+
+    seed_ = 666
+
+    train_ = to_be_split_.sample(n = _n_train, random_state = seed_)
+
+    to_be_split_ = to_be_split_.drop(train_.index)
+    test_ = to_be_split_.sample(n = _n_test, random_state = seed_)
+    
+    val_ = to_be_split_.drop(test_.index).sample(n = _n_val, random_state = seed_)
+
+    return train_, test_, val_
+
+large_dataframe.shape[0]
+
+train, test, validation = split(large_dataframe, 200000, 10000, 19000)
+
+print_balance(train, 'label')
+print_balance(test, 'label')
+print_balance(validation, 'label')
+
+"""### Задание 4
 
 Проверьте, что данные из обучающей выборки не пересекаются с данными из валидационной и контрольной выборок. Другими словами, избавьтесь от дубликатов в обучающей выборке.
+"""
 
-### Задание 5
+def no_duplicates(_dataframe, _data_column_name):
+
+    original_length_ = _dataframe.shape[0]
+
+    unique_length_ = _dataframe[_data_column_name].astype(str).unique().shape[0]
+
+    print(str(original_length_) + ' -- ' + str(unique_length_))
+
+    return original_length_ == unique_length_
+
+print(no_duplicates(small_dataframe, 'data'))
+
+print(no_duplicates(large_dataframe, 'data'))
+
+"""### Задание 5
 
 Постройте простейший классификатор (например, с помощью логистической регрессии). Постройте график зависимости точности классификатора от размера обучающей выборки (50, 100, 1000, 50000). Для построения классификатора можете использовать библиотеку _SkLearn_ (http://scikit-learn.org).
 """
+
+def dataframe_to_x_y(_dataframe):
+
+    x_ = np.stack(_dataframe['data']).reshape((_dataframe.shape[0], -1))
+
+    y_= _dataframe['label'].to_numpy()
+
+    return x_, y_
+
+X_train, y_train = dataframe_to_x_y(train)
+X_test, y_test = dataframe_to_x_y(test)
+
+sizes = [50, 100, 1000, 50000]
+
+clfs = {}
+
+scores = {}
+
+from sklearn.linear_model import LogisticRegression
+
+for size_ in sizes:
+
+    clf_ = LogisticRegression(max_iter = 100).fit(X_train[:size_], y_train[:size_])
+
+    clfs[size_] = clf_
+
+print(*clfs[50000].predict(X_test[:10]), sep = '\t')
+
+print(*y_test[:10], sep = '\t')
+
+for size_ in sizes:
+    
+    scores[size_] = clfs[size_].score(X_test, y_test)
+
+import seaborn as sns
+
+from matplotlib import rcParams
+
+rcParams['figure.figsize'] = 11.7, 8.27
+
+sns.set()
+
+sns.set_palette(sns.color_palette('husl'))
+
+sns.lineplot(sizes, [scores[s] for s in sizes])
+
+plt.show()
