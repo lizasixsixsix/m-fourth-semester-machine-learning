@@ -54,22 +54,13 @@ import tensorflow as tf
 
 import numpy as np
 
-# train_df = dataframe.sample(frac = 0.7)
-# test_df = dataframe.drop(train_df.index)
-
-# train_df = train_df.reset_index()
-# test_df = test_df.reset_index()
-
-# train_dataset = tf.data.Dataset.from_tensor_slices((np.asarray(list(train_df['data'])), train_df['label']))
-# test_dataset = tf.data.Dataset.from_tensor_slices((np.asarray(list(test_df['data'])), test_df['label']))
-
-# dataset = tf.data.Dataset.from_tensors((np.asarray(list(dataframe['data'])), dataframe['label']))
-
 x = np.asarray(list(dataframe['data']))[..., np.newaxis]
 
 x = tf.keras.utils.normalize(x, axis = 1)
 
 x.shape
+
+IMAGE_DIM_0, IMAGE_DIM_1 = x.shape[1], x.shape[2]
 
 from tensorflow.keras.utils import to_categorical
 
@@ -77,37 +68,42 @@ y = to_categorical(dataframe['label'].astype('category').cat.codes.astype('int32
 
 y.shape
 
+LAYER_WIDTH = 5000
+
+CLASSES_N = y.shape[1]
+
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras.layers import Dense, Reshape
 
 model = tf.keras.Sequential()
 
-model.add(Conv2D(16, 3, padding='same', activation='relu', input_shape=(28, 28, 1)))
-model.add(MaxPooling2D())
-model.add(Conv2D(32, 3, padding='same', activation='relu'))
-model.add(MaxPooling2D())
-model.add(Conv2D(64, 3, padding='same', activation='relu'))
-model.add(MaxPooling2D())
-model.add(Flatten())
-model.add(Dense(512, activation='relu'))
-model.add(Dense(10))
+model.add(Reshape((IMAGE_DIM_0 * IMAGE_DIM_1,), input_shape = (IMAGE_DIM_0, IMAGE_DIM_1, 1)))
+model.add(Dense(LAYER_WIDTH, activation = 'relu'))
+model.add(Dense(LAYER_WIDTH, activation = 'sigmoid'))
+model.add(Dense(LAYER_WIDTH, activation = 'tanh'))
+model.add(Dense(LAYER_WIDTH, activation = 'elu'))
+model.add(Dense(LAYER_WIDTH, activation = 'softmax'))
+model.add(Dense(CLASSES_N))
 
-def custom_loss(y_true, y_pred):
-    return tf.keras.losses.categorical_crossentropy(
-    y_true, y_pred, from_logits=True)
+def cat_cross_from_logits(y_true, y_pred):
+    return tf.keras.losses.categorical_crossentropy(y_true, y_pred, from_logits = True)
 
-model.compile(optimizer='sgd',
-              loss=custom_loss,
-              metrics=['categorical_accuracy'])
+model.compile(optimizer = 'sgd',
+              loss = cat_cross_from_logits,
+              metrics = ['categorical_accuracy'])
 
 model.summary()
 
-batch_size = 128
+BATCH_SIZE = 128
 
 r = 3608
 
-model.fit(x = x[:r * batch_size], y = y[:r * batch_size], epochs = 50, batch_size = batch_size,
-          validation_split = 0.15)
+VAL_SPLIT_RATE = 0.1
+
+EPOCHS_N = 20
+
+model.fit(x = x[:r * BATCH_SIZE], y = y[:r * BATCH_SIZE], epochs = EPOCHS_N, batch_size = BATCH_SIZE,
+          validation_split = VAL_SPLIT_RATE)
 
 """### Задание 2
 
@@ -116,8 +112,56 @@ model.fit(x = x[:r * batch_size], y = y[:r * batch_size], epochs = 50, batch_siz
 ### Задание 3
 
 Используйте регуляризацию и метод сброса нейронов (_dropout_) для борьбы с переобучением. Как улучшилось качество классификации?
+"""
 
-### Задание 4
+REG_RATE = 0.001
+
+from tensorflow.keras.regularizers import l2
+
+l2_reg = l2(REG_RATE)
+
+DROPOUT_RATE = 0.2
+
+from tensorflow.keras.layers import Dropout
+
+dropout_layer = Dropout(DROPOUT_RATE)
+
+model_2 = tf.keras.Sequential()
+
+model_2.add(Reshape((IMAGE_DIM_0 * IMAGE_DIM_1,), input_shape = (IMAGE_DIM_0, IMAGE_DIM_1, 1)))
+model_2.add(Dense(LAYER_WIDTH, activation = 'relu', kernel_regularizer = l2_reg))
+model_2.add(dropout_layer)
+model_2.add(Dense(LAYER_WIDTH, activation = 'sigmoid', kernel_regularizer = l2_reg))
+model_2.add(dropout_layer)
+model_2.add(Dense(LAYER_WIDTH, activation = 'tanh', kernel_regularizer = l2_reg))
+model_2.add(dropout_layer)
+model_2.add(Dense(LAYER_WIDTH, activation = 'sigmoid', kernel_regularizer = l2_reg))
+model_2.add(dropout_layer)
+model_2.add(Dense(LAYER_WIDTH, activation = 'relu', kernel_regularizer = l2_reg))
+model_2.add(dropout_layer)
+model_2.add(Dense(CLASSES_N))
+
+model_2.compile(optimizer = 'sgd',
+                loss = cat_cross_from_logits,
+                metrics = ['categorical_accuracy'])
+
+model_2.summary()
+
+model_2.fit(x = x[:r * BATCH_SIZE], y = y[:r * BATCH_SIZE], epochs = EPOCHS_N, batch_size = BATCH_SIZE,
+            validation_split = VAL_SPLIT_RATE)
+
+"""### Задание 4
 
 Воспользуйтесь динамически изменяемой скоростью обучения (_learning rate_). Наилучшая точность, достигнутая с помощью данной модели составляет 97.1%. Какую точность демонстрирует Ваша реализованная модель?
 """
+
+from tensorflow.keras.optimizers import SGD
+
+dyn_lr_sgd = SGD(lr = 0.01, momentum = 0.9)
+
+model_2.compile(optimizer = dyn_lr_sgd,
+                loss = cat_cross_from_logits,
+                metrics = ['categorical_accuracy'])
+
+model_2.fit(x = x[:r * BATCH_SIZE], y = y[:r * BATCH_SIZE], epochs = EPOCHS_N, batch_size = BATCH_SIZE,
+            validation_split = VAL_SPLIT_RATE)
