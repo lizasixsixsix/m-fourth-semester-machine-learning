@@ -24,8 +24,92 @@ http://yaroslavvb.blogspot.sg/2011/09/notmnist-dataset.html
 ### Задание 1
 
 Реализуйте полносвязную нейронную сеть с помощью библиотеки _TensorFlow_. В качестве алгоритма оптимизации можно использовать, например, стохастический градиент (_Stochastic Gradient Descent_, _SGD_). Определите количество скрытых слоев от 1 до 5, количество нейронов в каждом из слоев до нескольких сотен, а также их функции активации (кусочно-линейная, сигмоидная, гиперболический тангенс и т.д.).
+"""
 
-### Задание 2
+from google.colab import drive
+
+drive.mount('/content/drive', force_remount = True)
+
+BASE_DIR = '/content/drive/My Drive/Colab Files/mo-2'
+
+import sys
+
+sys.path.append(BASE_DIR)
+
+import os
+
+os.chdir(BASE_DIR)
+
+import pandas as pd
+
+dataframe = pd.read_pickle("./large.pkl")
+
+dataframe['data'].shape
+
+! pip install tensorflow-gpu --pre --quiet
+
+! pip show tensorflow-gpu
+
+import tensorflow as tf
+
+import numpy as np
+
+# train_df = dataframe.sample(frac = 0.7)
+# test_df = dataframe.drop(train_df.index)
+
+# train_df = train_df.reset_index()
+# test_df = test_df.reset_index()
+
+# train_dataset = tf.data.Dataset.from_tensor_slices((np.asarray(list(train_df['data'])), train_df['label']))
+# test_dataset = tf.data.Dataset.from_tensor_slices((np.asarray(list(test_df['data'])), test_df['label']))
+
+# dataset = tf.data.Dataset.from_tensors((np.asarray(list(dataframe['data'])), dataframe['label']))
+
+x = np.asarray(list(dataframe['data']))[..., np.newaxis]
+
+x = tf.keras.utils.normalize(x, axis = 1)
+
+x.shape
+
+from tensorflow.keras.utils import to_categorical
+
+y = to_categorical(dataframe['label'].astype('category').cat.codes.astype('int32'))
+
+y.shape
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+
+model = tf.keras.Sequential()
+
+model.add(Conv2D(16, 3, padding='same', activation='relu', input_shape=(28, 28, 1)))
+model.add(MaxPooling2D())
+model.add(Conv2D(32, 3, padding='same', activation='relu'))
+model.add(MaxPooling2D())
+model.add(Conv2D(64, 3, padding='same', activation='relu'))
+model.add(MaxPooling2D())
+model.add(Flatten())
+model.add(Dense(512, activation='relu'))
+model.add(Dense(10))
+
+def custom_loss(y_true, y_pred):
+    return tf.keras.losses.categorical_crossentropy(
+    y_true, y_pred, from_logits=True)
+
+model.compile(optimizer='sgd',
+              loss=custom_loss,
+              metrics=['categorical_accuracy'])
+
+model.summary()
+
+batch_size = 128
+
+r = 3608
+
+model.fit(x = x[:r * batch_size], y = y[:r * batch_size], epochs = 50, batch_size = batch_size,
+          validation_split = 0.15)
+
+"""### Задание 2
 
 Как улучшилась точность классификатора по сравнению с логистической регрессией?
 
