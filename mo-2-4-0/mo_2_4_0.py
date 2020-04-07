@@ -49,8 +49,56 @@ Original file is located at
 Реализуйте глубокую нейронную сеть (полносвязную или сверточную) и обучите ее на синтетических данных (например, наборы _MNIST_ (http://yann.lecun.com/exdb/mnist/) или _notMNIST_).
 
 Ознакомьтесь с имеющимися работами по данной тематике: англоязычная статья ( http://static.googleusercontent.com/media/research.google.com/en//pubs/archive/42241.pdf ), видео на _YouTube_ (https://www.youtube.com/watch?v=vGPI_JvLoN0).
+"""
 
-### Задание 2
+! pip install tensorflow-gpu --pre --quiet
+
+! pip show tensorflow-gpu
+
+import tensorflow as tf
+
+import numpy as np
+
+from tensorflow.keras.datasets import mnist
+
+(x_train, y_train), (x_val, y_val) = mnist.load_data()
+
+x_train, x_val = tf.keras.utils.normalize(x_train, axis = 1), tf.keras.utils.normalize(x_val, axis = 1)
+
+x_train, x_val = x_train[..., np.newaxis], x_val[..., np.newaxis]
+
+IMAGE_DIM_0, IMAGE_DIM_1 = x_train.shape[1], x_train.shape[2]
+
+CLASSES_N = y_train.max()
+
+print(x_train.shape, x_val.shape)
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import AveragePooling2D, Conv2D, Dense, Flatten
+
+model = tf.keras.Sequential()
+
+model.add(Conv2D(6, kernel_size = (5, 5), strides = (1, 1), activation = 'tanh', padding = 'same',
+                   input_shape = (IMAGE_DIM_0, IMAGE_DIM_1, 1)))
+model.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2), padding = 'valid'))
+model.add(Conv2D(16, kernel_size = (5, 5), strides = (1, 1), activation = 'tanh', padding = 'valid'))
+model.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2), padding = 'valid'))
+model.add(Flatten())
+model.add(Dense(120, activation = 'tanh'))
+model.add(Dense(84, activation = 'tanh'))
+model.add(Dense(CLASSES_N, activation = 'softmax'))
+
+model.compile(optimizer = 'adam',
+              loss = 'sparse_categorical_crossentropy',
+              metrics = ['sparse_categorical_accuracy'])
+
+model.summary()
+
+EPOCHS_N = 20
+
+model.fit(x = x_train, y = y_train, validation_data=(x_val, y_val), epochs = EPOCHS_N)
+
+"""### Задание 2
 
 После уточнения модели на синтетических данных попробуйте обучить ее на реальных данных (набор _Google Street View_). Что изменилось в модели?
 
@@ -58,7 +106,7 @@ Original file is located at
 
 Сделайте множество снимков изображений номеров домов с помощью смартфона на ОС _Android_. Также можно использовать библиотеки _OpenCV_, _Simple CV_ или _Pygame_ для обработки изображений с общедоступных камер видеонаблюдения (например, https://www.earthcam.com/).
 
-Пример использования библиотеки _TensorFlow_ на смартфоне можете воспользоваться демонстрационным приложением от _Google_ (https://github.com/tensorflow/tensorflow/tree/master/tensorflow/examples/android).
+В качестве примера использования библиотеки _TensorFlow_ на смартфоне можете воспользоваться демонстрационным приложением от _Google_ (https://github.com/tensorflow/tensorflow/tree/master/tensorflow/examples/android).
 
 ### Задание 4
 
