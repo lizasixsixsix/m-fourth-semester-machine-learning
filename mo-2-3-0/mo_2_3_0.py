@@ -23,13 +23,109 @@ http://yaroslavvb.blogspot.sg/2011/09/notmnist-dataset.html
 
 ### Задание 1
 
-Реализуйте нейронную сеть с двумя сверточными слоями, и одним полносвязным с нейронами с кусочно-линейной функцией активации. Какова точность построенное модели?
+Реализуйте нейронную сеть с двумя сверточными слоями, и одним полносвязным с нейронами с кусочно-линейной функцией активации. Какова точность построенной модели?
+"""
 
-### Задание 2
+from google.colab import drive
+
+drive.mount('/content/drive', force_remount = True)
+
+BASE_DIR = '/content/drive/My Drive/Colab Files/mo-2'
+
+import sys
+
+sys.path.append(BASE_DIR)
+
+import os
+
+os.chdir(BASE_DIR)
+
+import pandas as pd
+
+dataframe = pd.read_pickle("./large.pkl")
+
+! pip install tensorflow-gpu --pre --quiet
+
+! pip show tensorflow-gpu
+
+import tensorflow as tf
+
+import numpy as np
+
+x = np.asarray(list(dataframe['data']))[..., np.newaxis]
+
+x = tf.keras.utils.normalize(x, axis = 1)
+
+x.shape
+
+IMAGE_DIM_0, IMAGE_DIM_1 = x.shape[1], x.shape[2]
+
+from tensorflow.keras.utils import to_categorical
+
+y = to_categorical(dataframe['label'].astype('category').cat.codes.astype('int32'))
+
+y.shape
+
+CLASSES_N = y.shape[1]
+
+DENSE_LAYER_WIDTH = 5000
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, Dense, Flatten
+
+model = tf.keras.Sequential()
+
+model.add(Conv2D(16, 3, padding='same', activation='relu', input_shape=(IMAGE_DIM_0, IMAGE_DIM_1, 1)))
+model.add(Conv2D(32, 3, padding='same', activation='relu'))
+model.add(Flatten())
+model.add(Dense(DENSE_LAYER_WIDTH, activation='relu'))
+model.add(Dense(CLASSES_N))
+
+def cat_cross_from_logits(y_true, y_pred):
+    return tf.keras.losses.categorical_crossentropy(y_true, y_pred, from_logits = True)
+
+model.compile(optimizer = 'sgd',
+              loss = cat_cross_from_logits,
+              metrics = ['categorical_accuracy'])
+
+model.summary()
+
+BATCH_SIZE = 128
+
+r = 3608
+
+VAL_SPLIT_RATE = 0.1
+
+EPOCHS_N = 20
+
+model.fit(x = x[:r * BATCH_SIZE], y = y[:r * BATCH_SIZE], epochs = EPOCHS_N, batch_size = BATCH_SIZE,
+          validation_split = VAL_SPLIT_RATE)
+
+"""### Задание 2
 
 Замените один из сверточных слоев на слой, реализующий операцию пулинга (_Pooling_) с функцией максимума или среднего. Как это повлияло на точность классификатора?
+"""
 
-### Задание 3
+from tensorflow.keras.layers import MaxPooling2D
+
+model_2 = tf.keras.Sequential()
+
+model_2.add(Conv2D(16, 3, padding='same', activation='relu', input_shape=(IMAGE_DIM_0, IMAGE_DIM_1, 1)))
+model_2.add(MaxPooling2D())
+model_2.add(Flatten())
+model_2.add(Dense(DENSE_LAYER_WIDTH, activation='relu'))
+model_2.add(Dense(CLASSES_N))
+
+model_2.compile(optimizer = 'sgd',
+               loss = cat_cross_from_logits,
+               metrics = ['categorical_accuracy'])
+
+model_2.summary()
+
+model_2.fit(x = x[:r * BATCH_SIZE], y = y[:r * BATCH_SIZE], epochs = EPOCHS_N, batch_size = BATCH_SIZE,
+            validation_split = VAL_SPLIT_RATE)
+
+"""### Задание 3
 
 Реализуйте классическую архитектуру сверточных сетей _LeNet-5_ (http://yann.lecun.com/exdb/lenet/).
 
