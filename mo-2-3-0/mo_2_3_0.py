@@ -110,10 +110,10 @@ from tensorflow.keras.layers import MaxPooling2D
 
 model_2 = tf.keras.Sequential()
 
-model_2.add(Conv2D(16, 3, padding='same', activation='relu', input_shape=(IMAGE_DIM_0, IMAGE_DIM_1, 1)))
+model_2.add(Conv2D(16, 3, padding = 'same', activation = 'relu', input_shape = (IMAGE_DIM_0, IMAGE_DIM_1, 1)))
 model_2.add(MaxPooling2D())
 model_2.add(Flatten())
-model_2.add(Dense(DENSE_LAYER_WIDTH, activation='relu'))
+model_2.add(Dense(DENSE_LAYER_WIDTH, activation = 'relu'))
 model_2.add(Dense(CLASSES_N))
 
 model_2.compile(optimizer = 'sgd',
@@ -128,8 +128,30 @@ model_2.fit(x = x[:r * BATCH_SIZE], y = y[:r * BATCH_SIZE], epochs = EPOCHS_N, b
 """### Задание 3
 
 Реализуйте классическую архитектуру сверточных сетей _LeNet-5_ (http://yann.lecun.com/exdb/lenet/).
+"""
 
-### Задание 4
+from tensorflow.keras.layers import AveragePooling2D
+
+model_3 = tf.keras.Sequential()
+
+model_3.add(Conv2D(6, kernel_size = (5, 5), strides = (1, 1), activation = 'tanh', padding = 'same',
+                   input_shape = (IMAGE_DIM_0, IMAGE_DIM_1, 1)))
+model_3.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2), padding = 'valid'))
+model_3.add(Conv2D(16, kernel_size = (5, 5), strides = (1, 1), activation = 'tanh', padding = 'valid'))
+model_3.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2), padding = 'valid'))
+model_3.add(Flatten())
+model_3.add(Dense(120, activation = 'tanh'))
+model_3.add(Dense(84, activation = 'tanh'))
+model_3.add(Dense(CLASSES_N, activation = 'softmax'))
+
+model_3.compile(optimizer = 'adam',
+                loss = 'categorical_crossentropy',
+                metrics = ['categorical_accuracy'])
+
+model_3.fit(x = x[:r * BATCH_SIZE], y = y[:r * BATCH_SIZE], epochs = EPOCHS_N, batch_size = BATCH_SIZE,
+            validation_split = VAL_SPLIT_RATE)
+
+"""### Задание 4
 
 Сравните максимальные точности моделей, построенных в лабораторных работах 1-3. Как можно объяснить полученные различия?
 """
