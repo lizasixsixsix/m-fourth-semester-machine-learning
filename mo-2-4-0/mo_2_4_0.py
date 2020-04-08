@@ -67,9 +67,15 @@ x_train, x_val = tf.keras.utils.normalize(x_train, axis = 1), tf.keras.utils.nor
 
 x_train, x_val = x_train[..., np.newaxis], x_val[..., np.newaxis]
 
+from tensorflow.keras.utils import to_categorical
+
+y_train, y_val = to_categorical(y_train), to_categorical(y_val)
+
+y_train.shape
+
 IMAGE_DIM_0, IMAGE_DIM_1 = x_train.shape[1], x_train.shape[2]
 
-CLASSES_N = y_train.max()
+CLASSES_N = y_train.shape[1]
 
 print(x_train.shape, x_val.shape)
 
@@ -88,9 +94,11 @@ model.add(Dense(120, activation = 'tanh'))
 model.add(Dense(84, activation = 'tanh'))
 model.add(Dense(CLASSES_N, activation = 'softmax'))
 
+# 'sparse_categorical_crossentropy' gave NAN loss
+
 model.compile(optimizer = 'adam',
-              loss = 'sparse_categorical_crossentropy',
-              metrics = ['sparse_categorical_accuracy'])
+              loss = 'categorical_crossentropy',
+              metrics = ['categorical_accuracy'])
 
 model.summary()
 
