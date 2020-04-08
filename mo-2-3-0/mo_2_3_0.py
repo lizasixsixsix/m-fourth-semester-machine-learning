@@ -50,6 +50,10 @@ dataframe = pd.read_pickle("./large.pkl")
 
 import tensorflow as tf
 
+# To fix memory leak: https://github.com/tensorflow/tensorflow/issues/33009
+
+tf.compat.v1.disable_eager_execution()
+
 import numpy as np
 
 x = np.asarray(list(dataframe['data']))[..., np.newaxis]
