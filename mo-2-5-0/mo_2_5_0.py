@@ -19,8 +19,36 @@ Original file is located at
 ### Задание 1
 
 Загрузите данные. Разделите исходный набор данных на обучающую, валидационную и контрольную выборки.
+"""
 
-### Задание 2
+from google.colab import drive
+
+drive.mount('/content/drive', force_remount = True)
+
+BASE_DIR = '/content/drive/My Drive/Colab Files/mo-2/dogs-vs-cats'
+
+import sys
+
+sys.path.append(BASE_DIR)
+
+import os
+
+TRAIN_ARCHIVE_NAME = 'train.zip'
+TEST_ARCHIVE_NAME = 'test1.zip'
+
+LOCAL_DIR_NAME = 'dogs-vs-cats'
+
+from zipfile import ZipFile
+
+with ZipFile(os.path.join(BASE_DIR, TRAIN_ARCHIVE_NAME), 'r') as zip_:
+    zip_.extractall(path = os.path.join(LOCAL_DIR_NAME, 'train'))
+
+with ZipFile(os.path.join(BASE_DIR, TEST_ARCHIVE_NAME), 'r') as zip_:
+    zip_.extractall(path = os.path.join(LOCAL_DIR_NAME, 'test-1'))
+
+# ! ls dogs-vs-cats/train/train
+
+"""### Задание 2
 
 Реализуйте глубокую нейронную сеть с как минимум тремя сверточными слоями. Какое качество классификации получено?
 
