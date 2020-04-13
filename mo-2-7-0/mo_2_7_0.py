@@ -24,7 +24,42 @@ Original file is located at
 
 Загрузите данные. Преобразуйте текстовые файлы во внутренние структуры данных, которые используют индексы вместо слов.
 
-### Задание 2
+Оригинальная ссылка отдавала 404, поэтому был использован другой датасет, похожий по описанию: https://www.kaggle.com/jcblaise/imdb-sentiments, а токенизация проведена самостоятельно.
+"""
+
+from google.colab import drive
+
+drive.mount('/content/drive', force_remount = True)
+
+BASE_DIR = '/content/drive/My Drive/Colab Files/mo-2'
+
+import sys
+
+sys.path.append(BASE_DIR)
+
+import os
+
+DATA_ARCHIVE_NAME = 'imdb-sentiments.zip'
+
+LOCAL_DIR_NAME = 'imdb-sentiments'
+
+from zipfile import ZipFile
+
+with ZipFile(os.path.join(BASE_DIR, DATA_ARCHIVE_NAME), 'r') as zip_:
+    zip_.extractall(LOCAL_DIR_NAME)
+
+TRAIN_FILE_PATH = 'imdb-sentiments/train.csv'
+TEST_FILE_PATH = 'imdb-sentiments/test.csv'
+
+import pandas as pd
+
+train_df = pd.read_csv(TRAIN_FILE_PATH)
+test_all_df = pd.read_csv(TEST_FILE_PATH)
+
+print(train_df.shape)
+print(test_all_df.shape)
+
+"""### Задание 2
 
 Реализуйте и обучите двунаправленную рекуррентную сеть (_LSTM_ или _GRU_).
 
