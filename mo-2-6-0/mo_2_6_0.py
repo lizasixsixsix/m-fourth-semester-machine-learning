@@ -21,8 +21,45 @@ Original file is located at
 ### Задание 1
 
 Загрузите данные. Разделите исходный набор данных на обучающую и валидационную выборки.
+"""
 
-### Задание 2
+from google.colab import drive
+
+drive.mount('/content/drive', force_remount = True)
+
+BASE_DIR = '/content/drive/My Drive/Colab Files/mo-2'
+
+import sys
+
+sys.path.append(BASE_DIR)
+
+import os
+
+DATA_ARCHIVE_NAME = 'sign-language-mnist.zip'
+
+LOCAL_DIR_NAME = 'sign-language'
+
+from zipfile import ZipFile
+
+with ZipFile(os.path.join(BASE_DIR, DATA_ARCHIVE_NAME), 'r') as zip_:
+    zip_.extractall(path = os.path.join(LOCAL_DIR_NAME, 'train'))
+
+TRAIN_FILE_PATH = 'sign-language/train/sign_mnist_train.csv'
+TEST_FILE_PATH = 'sign-language/train/sign_mnist_test.csv'
+
+import pandas as pd
+
+train_df = pd.read_csv(TRAIN_FILE_PATH)
+test_all_df = pd.read_csv(TEST_FILE_PATH)
+
+val_df = test_all_df.sample(frac = 0.5)
+test_df = test_all_df.drop(val_df.index)
+
+print(train_df.shape)
+print(val_df.shape)
+print(test_df.shape)
+
+"""### Задание 2
 
 Реализуйте глубокую нейронную сеть со сверточными слоями. Какое качество классификации получено? Какая архитектура сети была использована?
 
