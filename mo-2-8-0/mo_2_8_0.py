@@ -17,12 +17,53 @@ Original file is located at
 ### Задание 1
 
 Загрузите данные. Изобразите ряд в виде графика. Вычислите основные характеристики временного ряда (сезонность, тренд, автокорреляцию).
+"""
 
-### Задание 2
+from google.colab import drive
+
+drive.mount('/content/drive', force_remount = True)
+
+BASE_DIR = '/content/drive/My Drive/Colab Files/mo-2'
+
+import sys
+
+sys.path.append(BASE_DIR)
+
+import os
+
+DATA_ARCHIVE_NAME = 'sunspots.zip'
+
+LOCAL_DIR_NAME = 'sunspots'
+
+from zipfile import ZipFile
+
+with ZipFile(os.path.join(BASE_DIR, DATA_ARCHIVE_NAME), 'r') as zip_:
+    zip_.extractall(LOCAL_DIR_NAME)
+
+DATA_FILE_PATH = 'sunspots/Sunspots.csv'
+
+import pandas as pd
+
+all_df = pd.read_csv(DATA_FILE_PATH)
+
+print(all_df.shape)
+
+"""### Задание 2
 
 Для прогнозирования разделите временной ряд на обучающую, валидационную и контрольную выборки.
+"""
 
-### Задание 3
+train_df = all_df.sample(frac = 0.5)
+all_df = all_df.drop(train_df.index)
+
+val_df = all_df.sample(frac = 0.5)
+test_df = all_df.drop(val_df.index)
+
+print(train_df.shape)
+print(val_df.shape)
+print(test_df.shape)
+
+"""### Задание 3
 
 Примените модель _ARIMA_ для прогнозирования значений данного временного ряда.
 
