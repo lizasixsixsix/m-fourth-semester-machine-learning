@@ -18,13 +18,11 @@ Original file is located at
 
 Обучающая выборка включает в себя 12,500 положительных и 12,500 отрицательных отзывов, контрольная выборка также содержит 12,500 положительных и 12,500 отрицательных отзывов.
 
-Данные можно скачать на сайте _Kaggle_: https://www.kaggle.com/iarunava/imdb-movie-reviews-dataset
+Данные можно скачать ~~на сайте _Kaggle_~~: ~~https://www.kaggle.com/iarunava/imdb-movie-reviews-dataset~~ https://ai.stanford.edu/~amaas/data/sentiment/
 
 ### Задание 1
 
 Загрузите данные. Преобразуйте текстовые файлы во внутренние структуры данных, которые используют индексы вместо слов.
-
-Оригинальная ссылка отдавала 404, поэтому был использован другой датасет, похожий по описанию: https://www.kaggle.com/jcblaise/imdb-sentiments, а токенизация проведена самостоятельно.
 """
 
 from google.colab import drive
@@ -39,7 +37,7 @@ sys.path.append(BASE_DIR)
 
 import os
 
-DATA_ARCHIVE_NAME = 'imdb-sentiments.zip'
+DATA_ARCHIVE_NAME = 'imdb-dataset-of-50k-movie-reviews.zip'
 
 LOCAL_DIR_NAME = 'imdb-sentiments'
 
@@ -48,16 +46,23 @@ from zipfile import ZipFile
 with ZipFile(os.path.join(BASE_DIR, DATA_ARCHIVE_NAME), 'r') as zip_:
     zip_.extractall(LOCAL_DIR_NAME)
 
-TRAIN_FILE_PATH = 'imdb-sentiments/train.csv'
-TEST_FILE_PATH = 'imdb-sentiments/test.csv'
+DATA_FILE_PATH = 'imdb-sentiments/IMDB Dataset.csv'
 
 import pandas as pd
 
-train_df = pd.read_csv(TRAIN_FILE_PATH)
-test_all_df = pd.read_csv(TEST_FILE_PATH)
+all_df = pd.read_csv(DATA_FILE_PATH)
+
+print(all_df.shape)
+
+train_df = all_df.sample(frac = 0.7)
+all_df = all_df.drop(train_df.index)
+
+val_df = all_df.sample(frac = 0.5)
+test_df = all_df.drop(val_df.index)
 
 print(train_df.shape)
-print(test_all_df.shape)
+print(val_df.shape)
+print(test_df.shape)
 
 """### Задание 2
 
