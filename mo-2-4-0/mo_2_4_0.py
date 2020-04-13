@@ -56,6 +56,7 @@ Original file is located at
 ! pip show tensorflow-gpu
 
 import tensorflow as tf
+from tensorflow import keras
 
 import numpy as np
 
@@ -104,7 +105,7 @@ model.summary()
 
 EPOCHS_N = 20
 
-# model.fit(x = x_train, y = y_train, validation_data=(x_val, y_val), epochs = EPOCHS_N)
+model.fit(x = x_train, y = y_train, validation_data = (x_val, y_val), epochs = EPOCHS_N)
 
 """### Задание 2
 
@@ -156,6 +157,59 @@ second_ds_test_file = load_file(DS_URL_FOLDER, TEST_DS_NAME, SECOND_DS_EXT, 'sec
 second_ds_extra_file = load_file(DS_URL_FOLDER, EXTRA_DS_NAME, SECOND_DS_EXT, 'second')
 
 # ! ls extra_first/extra
+
+from scipy import io
+
+second_ds_train = io.loadmat(second_ds_train_file)
+second_ds_test = io.loadmat(second_ds_test_file)
+second_ds_extra = io.loadmat(second_ds_extra_file)
+
+X_second_ds_train = np.moveaxis(second_ds_train['X'], -1, 0)
+X_second_ds_test = np.moveaxis(second_ds_test['X'], -1, 0)
+X_second_ds_extra = np.moveaxis(second_ds_extra['X'], -1, 0)
+
+y_second_ds_train = second_ds_train['y']
+y_second_ds_test = second_ds_test['y']
+y_second_ds_extra = second_ds_extra['y']
+
+print(X_second_ds_train.shape, y_second_ds_train.shape)
+print(X_second_ds_test.shape, y_second_ds_test.shape)
+print(X_second_ds_extra.shape, y_second_ds_extra.shape)
+
+import matplotlib.pyplot as plt
+
+plt.imshow(X_second_ds_train[100])
+plt.imshow(X_second_ds_test[100])
+plt.imshow(X_second_ds_extra[100])
+
+IMAGE_DIM_0_2, IMAGE_DIM_1_2, IMAGE_DIM_2_2 = X_second_ds_train.shape[-3], X_second_ds_train.shape[-2], X_second_ds_train.shape[-1]
+
+y_second_ds_train_cat = to_categorical(y_second_ds_train)
+y_second_ds_test_cat = to_categorical(y_second_ds_test)
+
+CLASSES_N_2 = y_second_ds_train_cat.shape[1]
+
+model_2 = tf.keras.Sequential()
+
+model_2.add(Conv2D(6, kernel_size = (5, 5), strides = (1, 1), activation = 'tanh', padding = 'same',
+                   input_shape = (IMAGE_DIM_0_2, IMAGE_DIM_1_2, IMAGE_DIM_2_2)))
+model_2.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2), padding = 'valid'))
+model_2.add(Conv2D(16, kernel_size = (5, 5), strides = (1, 1), activation = 'tanh', padding = 'valid'))
+model_2.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2), padding = 'valid'))
+model_2.add(Flatten())
+model_2.add(Dense(120, activation = 'tanh'))
+model_2.add(Dense(84, activation = 'tanh'))
+model_2.add(Dense(CLASSES_N_2, activation = 'softmax'))
+
+model_2.compile(optimizer = 'adam',
+                loss = 'categorical_crossentropy',
+                metrics = ['categorical_accuracy'])
+
+model_2.summary()
+
+model_2.fit(x = X_second_ds_train, y = y_second_ds_train_cat,
+            validation_data = (X_second_ds_test, y_second_ds_test_cat),
+            epochs = EPOCHS_N)
 
 """### Задание 3
 
