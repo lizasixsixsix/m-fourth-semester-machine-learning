@@ -104,13 +104,60 @@ model.summary()
 
 EPOCHS_N = 20
 
-model.fit(x = x_train, y = y_train, validation_data=(x_val, y_val), epochs = EPOCHS_N)
+# model.fit(x = x_train, y = y_train, validation_data=(x_val, y_val), epochs = EPOCHS_N)
 
 """### Задание 2
 
 После уточнения модели на синтетических данных попробуйте обучить ее на реальных данных (набор _Google Street View_). Что изменилось в модели?
+"""
 
-### Задание 3
+DS_URL_FOLDER = 'http://ufldl.stanford.edu/housenumbers/'
+
+FIRST_DS_EXT = '.tar.gz'
+SECOND_DS_EXT = '_32x32.mat'
+
+TRAIN_DS_NAME = 'train'
+TEST_DS_NAME = 'test'
+EXTRA_DS_NAME = 'extra'
+
+from urllib.request import urlretrieve
+import tarfile
+import os
+
+def load_file(_url_folder, _name, _ext, _key, _local_ext = ''):
+
+    file_url_ = _url_folder + _name + _ext
+
+    local_file_name_ = _name + '_' + _key + _local_ext
+
+    urlretrieve(file_url_, local_file_name_)
+
+    return local_file_name_
+
+def tar_gz_to_dir(_url_folder, _name, _ext, _key):
+
+    local_file_name_ = load_file(_url_folder, _name, _ext, _key, _ext)
+
+    dir_name_ = _name + '_' + _key
+    
+    with tarfile.open(local_file_name_, 'r:gz') as tar_:
+        tar_.extractall(dir_name_)
+
+    os.remove(local_file_name_)
+
+    return dir_name_
+
+first_ds_train_dir = tar_gz_to_dir(DS_URL_FOLDER, TRAIN_DS_NAME, FIRST_DS_EXT, 'first')
+first_ds_test_dir = tar_gz_to_dir(DS_URL_FOLDER, TEST_DS_NAME, FIRST_DS_EXT, 'first')
+first_ds_extra_dir = tar_gz_to_dir(DS_URL_FOLDER, EXTRA_DS_NAME, FIRST_DS_EXT, 'first')
+
+second_ds_train_file = load_file(DS_URL_FOLDER, TRAIN_DS_NAME, SECOND_DS_EXT, 'second')
+second_ds_test_file = load_file(DS_URL_FOLDER, TEST_DS_NAME, SECOND_DS_EXT, 'second')
+second_ds_extra_file = load_file(DS_URL_FOLDER, EXTRA_DS_NAME, SECOND_DS_EXT, 'second')
+
+# ! ls extra_first/extra
+
+"""### Задание 3
 
 Сделайте множество снимков изображений номеров домов с помощью смартфона на ОС _Android_. Также можно использовать библиотеки _OpenCV_, _Simple CV_ или _Pygame_ для обработки изображений с общедоступных камер видеонаблюдения (например, https://www.earthcam.com/).
 
