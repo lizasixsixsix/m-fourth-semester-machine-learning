@@ -118,9 +118,9 @@ model.compile(optimizer = 'adam',
               loss = 'categorical_crossentropy',
               metrics = ['categorical_accuracy'])
 
-model.fit(x = X, y = y, epochs = 50, validation_split = 0.15)
+model.fit(x = X, y = y, epochs = 10, validation_split = 0.15)
 
-"""За 50 эпох удалось достичь 100%-й точности на валидационной выборке!
+"""За 10 эпох удалось достичь 100%-й точности на валидационной выборке!
 
 ### Задание 3
 
