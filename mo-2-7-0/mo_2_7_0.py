@@ -160,8 +160,48 @@ train_df_intized
 Реализуйте и обучите двунаправленную рекуррентную сеть (_LSTM_ или _GRU_).
 
 Какого качества классификации удалось достичь?
+"""
 
-### Задание 3
+! pip install tensorflow-gpu --pre --quiet
+
+! pip show tensorflow-gpu
+
+import tensorflow as tf
+from tensorflow import keras
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Bidirectional, LSTM, Dropout
+
+model = tf.keras.Sequential()
+
+model.add(Bidirectional(LSTM(MAX_LENGTH, return_sequences = False, recurrent_dropout = 0.2), merge_mode = 'concat',
+          input_shape = (MAX_LENGTH, 1)))
+model.add(Dropout(0.2))
+model.add(Dense(1, activation = 'sigmoid'))
+
+model.compile(optimizer = 'adam',
+              loss = 'binary_crossentropy',
+              metrics = ['accuracy'])
+
+model.summary()
+
+X_train = np.asarray(list(train_df_intized['ints'].values), dtype = float)[..., np.newaxis]
+X_test = np.asarray(list(test_df_intized['ints'].values), dtype = float)[..., np.newaxis]
+
+y_train = np.asarray(list(train_df_intized['label'].values))
+y_test = np.asarray(list(test_df_intized['label'].values))
+
+r = 1093
+
+r_v = 234
+
+batch_size = 32
+
+model.fit(x = X_train[:r * batch_size], y = y_train[:r * batch_size],
+          validation_data = (X_test[:r_v * batch_size], y_test[:r_v * batch_size]),
+          epochs = 5, batch_size = batch_size)
+
+"""### Задание 3
 
 Используйте индексы слов и их различное внутреннее представление (_word2vec_, _glove_). Как влияет данное преобразование на качество классификации?
 
