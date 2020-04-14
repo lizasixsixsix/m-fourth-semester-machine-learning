@@ -46,13 +46,96 @@ with ZipFile(os.path.join(BASE_DIR, TRAIN_ARCHIVE_NAME), 'r') as zip_:
 with ZipFile(os.path.join(BASE_DIR, TEST_ARCHIVE_NAME), 'r') as zip_:
     zip_.extractall(path = os.path.join(LOCAL_DIR_NAME, 'test-1'))
 
-# ! ls dogs-vs-cats/train/train
+from matplotlib import pyplot
+from matplotlib.image import imread
+
+dir_ = 'dogs-vs-cats/train/train'
+
+for i in range(9):
+
+    pyplot.subplot(330 + 1 + i)
+
+    image_ = imread('{}/cat.{}.jpg'.format(dir_, i))
+
+    pyplot.imshow(image_)
+ 
+pyplot.show()
+
+NEW_IMAGE_WIDTH = 100
+
+from os import listdir
+from numpy import asarray
+from numpy import save
+from keras.preprocessing.image import load_img
+from keras.preprocessing.image import img_to_array
+
+folder = 'dogs-vs-cats/train/train/'
+photos, labels = list(), list()
+
+for file in listdir(folder):
+
+	output = 0.0
+
+	if file.startswith('cat'):
+		output = 1.0
+
+	photo = load_img(folder + file, target_size = (NEW_IMAGE_WIDTH, NEW_IMAGE_WIDTH))
+
+	photo = img_to_array(photo)
+
+	photos.append(photo)
+	labels.append(output)
+
+import numpy as np
+
+photos = asarray(photos)
+labels = asarray(labels)
+
+print(photos.shape, labels.shape)
 
 """### Задание 2
 
 Реализуйте глубокую нейронную сеть с как минимум тремя сверточными слоями. Какое качество классификации получено?
+"""
 
-### Задание 3
+! pip install tensorflow-gpu --pre --quiet
+
+! pip show tensorflow-gpu
+
+import tensorflow as tf
+from tensorflow import keras
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+
+model = tf.keras.Sequential()
+
+model.add(Conv2D(16, 3, padding = 'same', activation = 'relu', input_shape = (NEW_IMAGE_WIDTH, NEW_IMAGE_WIDTH, 3)))
+model.add(MaxPooling2D())
+model.add(Conv2D(32, 3, padding = 'same', activation = 'relu'))
+model.add(MaxPooling2D())
+model.add(Conv2D(64, 3, padding = 'same', activation = 'relu'))
+model.add(MaxPooling2D())
+model.add(Flatten())
+model.add(Dense(512, activation = 'relu'))
+model.add(Dense(1, activation = 'sigmoid'))
+
+model.compile(optimizer = 'sgd',
+              loss = 'binary_crossentropy',
+              metrics = ['accuracy'])
+
+model.summary()
+
+photos_norm = tf.keras.utils.normalize(photos, axis = 1)
+
+batch_size = 32
+
+r = 780
+
+model.fit(x = photos[:r * batch_size], y = labels[:r * batch_size], epochs = 20, batch_size = batch_size,
+          validation_split = 0.15)
+
+"""### Задание 3
 
 Примените дополнение данных (_data augmentation_). Как это повлияло на качество классификатора?
 
