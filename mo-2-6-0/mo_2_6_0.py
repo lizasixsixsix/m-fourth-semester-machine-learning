@@ -50,18 +50,77 @@ TEST_FILE_PATH = 'sign-language/train/sign_mnist_test.csv'
 import pandas as pd
 
 train_df = pd.read_csv(TRAIN_FILE_PATH)
-test_all_df = pd.read_csv(TEST_FILE_PATH)
+test_df = pd.read_csv(TEST_FILE_PATH)
 
-val_df = test_all_df.sample(frac = 0.5)
-test_df = test_all_df.drop(val_df.index)
+all_df = pd.concat([train_df, test_df])
 
-print(train_df.shape)
-print(val_df.shape)
-print(test_df.shape)
+print(all_df.shape)
+
+IMAGE_DIM = 28
+
+def row_to_label(_row):
+    return _row[0]
+
+def row_to_one_image(_row):
+    return _row[1:].values.reshape((IMAGE_DIM, IMAGE_DIM, 1))
+
+def to_images_and_labels(_dataframe):
+
+    llll = _dataframe.apply(lambda row: row_to_label(row), axis = 1)
+    mmmm = _dataframe.apply(lambda row: row_to_one_image(row), axis = 1)
+
+    data_dict_ = { 'label': llll, 'image': mmmm }
+
+    reshaped_ = pd.DataFrame(data_dict_, columns = ['label', 'image'])
+
+    return reshaped_
+
+all_df_reshaped = to_images_and_labels(all_df)
 
 """### Задание 2
 
 Реализуйте глубокую нейронную сеть со сверточными слоями. Какое качество классификации получено? Какая архитектура сети была использована?
+
+Возьмём _LeNet-5_.
+"""
+
+! pip install tensorflow-gpu --pre --quiet
+
+! pip show tensorflow-gpu
+
+from tensorflow.keras.utils import to_categorical
+import numpy as np
+
+X = np.asarray(list(all_df_reshaped['image']))
+
+y = to_categorical(all_df_reshaped['label'].astype('category').cat.codes.astype('int32'))
+
+CLASSES_N = y.shape[1]
+
+import tensorflow as tf
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import AveragePooling2D, Conv2D, Dense, Flatten
+
+model = tf.keras.Sequential()
+
+model.add(Conv2D(6, kernel_size = (5, 5), strides = (1, 1), activation = 'tanh', padding = 'same',
+                   input_shape = (IMAGE_DIM, IMAGE_DIM, 1)))
+model.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2), padding = 'valid'))
+model.add(Conv2D(16, kernel_size = (5, 5), strides = (1, 1), activation = 'tanh', padding = 'valid'))
+model.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2), padding = 'valid'))
+model.add(Flatten())
+model.add(Dense(120, activation = 'tanh'))
+model.add(Dense(84, activation = 'tanh'))
+model.add(Dense(CLASSES_N, activation = 'softmax'))
+
+model.compile(optimizer = 'adam',
+              loss = 'categorical_crossentropy',
+              metrics = ['categorical_accuracy'])
+
+model.fit(x = X, y = y, epochs = 50, validation_split = 0.15)
+
+"""За 50 эпох удалось достичь 100%-й точности на валидационной выборке!
 
 ### Задание 3
 
