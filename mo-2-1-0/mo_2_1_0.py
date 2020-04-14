@@ -26,6 +26,20 @@ http://yaroslavvb.blogspot.sg/2011/09/notmnist-dataset.html
 Загрузите данные и отобразите на экране несколько из изображений с помощью языка Python.
 """
 
+# from google.colab import drive
+
+# drive.mount('/content/drive', force_remount = True)
+
+# BASE_DIR = '/content/drive/My Drive/Colab Files/mo-2'
+
+# import sys
+
+# sys.path.append(BASE_DIR)
+
+# import os
+
+# os.chdir(BASE_DIR)
+
 SMALL_DS_URL = 'https://commondatastorage.googleapis.com/books1000/notMNIST_small.tar.gz'
 LARGE_DS_URL = 'https://commondatastorage.googleapis.com/books1000/notMNIST_large.tar.gz'
 
@@ -40,13 +54,13 @@ import os
 
 def tar_to_dir(_tar_url, _key):
 
-    local_file_name_ = 'dataset_' + _key + '.f'    
     dir_name_ = 'dataset_' + _key
+    local_file_name_ = dir_name_ + '.f'
 
     urlretrieve(_tar_url, local_file_name_)
 
-    tar = tarfile.open(local_file_name_)
-    tar.extractall(dir_name_)
+    with tarfile.open(local_file_name_, 'r:gz') as tar_:
+        tar_.extractall(dir_name_)
 
     os.remove(local_file_name_)
 
@@ -107,32 +121,32 @@ def dir_to_dataframe(_dir_path):
         
         letter_ = subdir_
 
-        data = []
+        data_ = []
 
-        files = os.listdir(os.path.join(inner_dir_path_, subdir_))
+        files_ = os.listdir(os.path.join(inner_dir_path_, subdir_))
 
-        for f in files:
+        for f in files_:
             file_path_ = os.path.join(inner_dir_path_, subdir_, f)
             
             can_read_, im = image_to_array(file_path_)
 
             if can_read_:
-                data.append(im)
+                data_.append(im)
 
-        g = [letter_] * len(data)
+        g = [letter_] * len(data_)
 
-        e = np.array(data)
+        e = np.array(data_)
 
         h = pd.DataFrame()
 
-        h['data'] = data
+        h['data'] = data_
         h['label'] = letter_
 
         dataframes_.append(h)
 
-    result = pd.concat(dataframes_, ignore_index = True)
+    result_ = pd.concat(dataframes_, ignore_index = True)
 
-    unique_ = remove_duplicates(result, 'data')
+    unique_ = remove_duplicates(result_, 'data')
 
     return unique_
 
@@ -218,6 +232,9 @@ print(no_duplicates(small_dataframe, 'data'))
 
 print(no_duplicates(large_dataframe, 'data'))
 
+small_dataframe.to_pickle("./small.pkl")
+large_dataframe.to_pickle("./large.pkl")
+
 """### Задание 5
 
 Постройте простейший классификатор (например, с помощью логистической регрессии). Постройте график зависимости точности классификатора от размера обучающей выборки (50, 100, 1000, 50000). Для построения классификатора можете использовать библиотеку _SkLearn_ (http://scikit-learn.org).
@@ -264,8 +281,13 @@ rcParams['figure.figsize'] = 11.7, 8.27
 
 sns.set()
 
-sns.set_palette(sns.color_palette('husl'))
+sns.set_palette(sns.color_palette('hls'))
 
 sns.lineplot(sizes, [scores[s] for s in sizes])
+
+plt.xlabel('Samples $n$')
+plt.ylabel('Classifies Accuracy')
+
+plt.title('Accuracy for Samples $n$')
 
 plt.show()
