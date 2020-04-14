@@ -44,30 +44,95 @@ DATA_FILE_PATH = 'sunspots/Sunspots.csv'
 
 import pandas as pd
 
-all_df = pd.read_csv(DATA_FILE_PATH)
+all_df = pd.read_csv(DATA_FILE_PATH, parse_dates = ['Date'], index_col = 'Date')
 
 print(all_df.shape)
+
+all_df.keys()
+
+from statsmodels.tsa.seasonal import seasonal_decompose
+
+additive = seasonal_decompose(all_df['Monthly Mean Total Sunspot Number'], model = 'additive', extrapolate_trend = 'freq')
+
+# Commented out IPython magic to ensure Python compatibility.
+# %matplotlib inline
+
+import matplotlib.pyplot as plt
+
+import seaborn as sns
+
+from matplotlib import rcParams
+
+rcParams['figure.figsize'] = 11.7, 8.27
+
+sns.set()
+
+sns.set_palette(sns.color_palette('hls', 8))
+
+sns.lineplot(data = additive.observed, label = 'Observed')
+sns.lineplot(data = additive.trend, label = 'Trend')
+sns.lineplot(data = additive.seasonal, label = 'Seasonal')
+
+plt.xlabel('Date')
+plt.ylabel('Monthly Mean Total Sunspot Number')
+
+plt.title('Whole Series with Trend & Seasonality')
+
+plt.show()
+
+"""Рассмотрим подробнее на небольшом промежутке:"""
+
+sns.lineplot(data = additive.observed['1800-01-01':'1810-01-01'], label = 'Observed')
+sns.lineplot(data = additive.trend['1800-01-01':'1810-01-01'], label = 'Trend')
+sns.lineplot(data = additive.seasonal['1800-01-01':'1810-01-01'], label = 'Seasonal')
+
+plt.xlabel('Date')
+plt.ylabel('Monthly Mean Total Sunspot Number')
+
+plt.title('Series for 1800$-$1810 with Trend & Seasonality')
+
+plt.show()
+
+from pandas.plotting import autocorrelation_plot
+
+autocorrelation_plot(all_df.values.tolist())
+
+plt.title('Autocorrelation plot')
+
+plt.show()
 
 """### Задание 2
 
 Для прогнозирования разделите временной ряд на обучающую, валидационную и контрольную выборки.
-"""
 
-train_df = all_df.sample(frac = 0.5)
-all_df = all_df.drop(train_df.index)
+Этот шаг будет применён автоматически как параметр `validation_split` метода `model.fit()`.
 
-val_df = all_df.sample(frac = 0.5)
-test_df = all_df.drop(val_df.index)
-
-print(train_df.shape)
-print(val_df.shape)
-print(test_df.shape)
-
-"""### Задание 3
+### Задание 3
 
 Примените модель _ARIMA_ для прогнозирования значений данного временного ряда.
+"""
 
-### Задание 4
+from statsmodels.tsa.arima_model import ARIMA
+
+model = ARIMA(all_df['Monthly Mean Total Sunspot Number'].values, order = (5,1,0))
+
+model_fit = model.fit(disp=0)
+
+print(model_fit.summary())
+
+residuals = pd.DataFrame(model_fit.resid)
+
+residuals.plot()
+
+plt.show()
+
+residuals.plot(kind = 'kde')
+
+plt.show()
+
+print(residuals.describe())
+
+"""### Задание 4
 
 Повторите эксперимент по прогнозированию, реализовав рекуррентную нейронную сеть (с как минимум 2 рекуррентными слоями).
 
