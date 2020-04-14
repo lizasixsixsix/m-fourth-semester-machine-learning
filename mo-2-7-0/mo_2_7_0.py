@@ -68,11 +68,13 @@ import nltk
 
 nltk.download('punkt')
 
-MAX_LENGTH = 100
+MAX_LENGTH = 200
 
 STRING_DTYPE = '<U12'
 
 PADDING_TOKEN = 'PAD'
+
+LIMIT_OF_TOKENS = 100000
 
 from nltk import word_tokenize
 import numpy as np
@@ -105,7 +107,53 @@ def encode_and_tokenize(_dataframe):
 
     return encoded_and_tokenized
 
-encode_and_tokenize(val_df)
+train_df_tokenized = encode_and_tokenize(train_df)
+val_df_tokenized = encode_and_tokenize(val_df)
+test_df_tokenized = encode_and_tokenize(test_df)
+
+from collections import Counter
+
+def get_tokens_list(_dataframes_list):
+    
+    all_dataframe_ = pd.concat(_dataframes_list)
+    
+    all_tokens_ = []
+    
+    for sent_ in all_dataframe_['tokens'].values:
+        all_tokens_.extend(sent_)
+
+    tokens_counter_ = Counter(all_tokens_)
+                
+    return [t for t, _ in tokens_counter_.most_common(LIMIT_OF_TOKENS)]
+
+tokens_list = get_tokens_list([train_df_tokenized, val_df_tokenized, test_df_tokenized])
+
+word_to_int_dict = {}
+
+word_to_int_dict.update(
+    {t : i for i, t in enumerate(tokens_list)})
+
+def intize_row(_tokens):
+    return np.array([word_to_int_dict[t]
+                if t in word_to_int_dict
+                else 0
+            for t in _tokens])
+
+def encode_and_tokenize(_dataframe):
+
+    iiii = _dataframe.apply(lambda row: intize_row(row['tokens']), axis = 1)
+
+    data_dict = { 'label': _dataframe['label'], 'ints': iiii }
+
+    intized = pd.DataFrame(data_dict, columns = ['label', 'ints'])
+
+    return intized
+
+train_df_intized = encode_and_tokenize(train_df_tokenized)
+val_df_intized = encode_and_tokenize(val_df_tokenized)
+test_df_intized = encode_and_tokenize(test_df_tokenized)
+
+train_df_intized
 
 """### Задание 2
 
