@@ -64,6 +64,49 @@ print(train_df.shape)
 print(val_df.shape)
 print(test_df.shape)
 
+import nltk
+
+nltk.download('punkt')
+
+MAX_LENGTH = 100
+
+STRING_DTYPE = '<U12'
+
+PADDING_TOKEN = 'PAD'
+
+from nltk import word_tokenize
+import numpy as np
+import string
+import re
+
+def tokenize_string(_string):
+    return  [tok_.lower() for tok_ in word_tokenize(_string) if not re.fullmatch('[' + string.punctuation + ']+', tok_)]
+
+def pad(A, length):
+    arr = np.empty(length, dtype = STRING_DTYPE)
+    arr.fill(PADDING_TOKEN)
+    arr[:len(A)] = A
+    return arr
+
+def tokenize_row(_sentence):
+    return pad(tokenize_string(_sentence)[:MAX_LENGTH], MAX_LENGTH)
+
+def encode_row(_label):
+    return 1 if _label == 'positive' else 0
+
+def encode_and_tokenize(_dataframe):
+
+    tttt = _dataframe.apply(lambda row: tokenize_row(row['review']), axis = 1)
+    llll = _dataframe.apply(lambda row: encode_row(row['sentiment']), axis = 1)
+
+    data_dict = { 'label': llll, 'tokens': tttt }
+
+    encoded_and_tokenized = pd.DataFrame(data_dict, columns = ['label', 'tokens'])
+
+    return encoded_and_tokenized
+
+encode_and_tokenize(val_df)
+
 """### Задание 2
 
 Реализуйте и обучите двунаправленную рекуррентную сеть (_LSTM_ или _GRU_).
