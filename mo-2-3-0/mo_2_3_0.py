@@ -62,6 +62,10 @@ x = tf.keras.utils.normalize(x, axis = 1)
 
 x.shape
 
+import matplotlib.pyplot as plt
+
+plt.imshow(x[100].squeeze())
+
 IMAGE_DIM_0, IMAGE_DIM_1 = x.shape[1], x.shape[2]
 
 from tensorflow.keras.utils import to_categorical
@@ -79,10 +83,10 @@ from tensorflow.keras.layers import Conv2D, Dense, Flatten
 
 model = tf.keras.Sequential()
 
-model.add(Conv2D(16, 3, padding='same', activation='relu', input_shape=(IMAGE_DIM_0, IMAGE_DIM_1, 1)))
-model.add(Conv2D(32, 3, padding='same', activation='relu'))
+model.add(Conv2D(16, 3, padding = 'same', activation = 'relu', input_shape = (IMAGE_DIM_0, IMAGE_DIM_1, 1)))
+model.add(Conv2D(32, 3, padding = 'same', activation = 'relu'))
 model.add(Flatten())
-model.add(Dense(DENSE_LAYER_WIDTH, activation='relu'))
+model.add(Dense(DENSE_LAYER_WIDTH, activation = 'relu'))
 model.add(Dense(CLASSES_N))
 
 def cat_cross_from_logits(y_true, y_pred):
@@ -94,18 +98,15 @@ model.compile(optimizer = 'sgd',
 
 model.summary()
 
-BATCH_SIZE = 128
-
-r = 3608
-
 VAL_SPLIT_RATE = 0.1
 
-EPOCHS_N = 20
+EPOCHS_N = 10
 
-model.fit(x = x[:r * BATCH_SIZE], y = y[:r * BATCH_SIZE], epochs = EPOCHS_N, batch_size = BATCH_SIZE,
-          validation_split = VAL_SPLIT_RATE)
+model.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
 
-"""### Задание 2
+"""Лучшая точность построенной модели на валидационной выборке составила 60%.
+
+### Задание 2
 
 Замените один из сверточных слоев на слой, реализующий операцию пулинга (_Pooling_) с функцией максимума или среднего. Как это повлияло на точность классификатора?
 """
@@ -126,10 +127,11 @@ model_2.compile(optimizer = 'sgd',
 
 model_2.summary()
 
-model_2.fit(x = x[:r * BATCH_SIZE], y = y[:r * BATCH_SIZE], epochs = EPOCHS_N, batch_size = BATCH_SIZE,
-            validation_split = VAL_SPLIT_RATE)
+model_2.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
 
-"""### Задание 3
+"""Замена свёрточного слоя на операцию пулинга снизила лучшую точность на валидационной выборке до 56%.
+
+### Задание 3
 
 Реализуйте классическую архитектуру сверточных сетей _LeNet-5_ (http://yann.lecun.com/exdb/lenet/).
 """
@@ -152,10 +154,27 @@ model_3.compile(optimizer = 'adam',
                 loss = 'categorical_crossentropy',
                 metrics = ['categorical_accuracy'])
 
-model_3.fit(x = x[:r * BATCH_SIZE], y = y[:r * BATCH_SIZE], epochs = EPOCHS_N, batch_size = BATCH_SIZE,
-            validation_split = VAL_SPLIT_RATE)
+model_3.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
 
-"""### Задание 4
+"""Удивительно, но _LeNet-5_ показала результат хуже, чем первая модель, несмотря на то, что включала её слои и даже больше &mdash; всего 58% на валидационной выборке.
+
+### Задание 4
 
 Сравните максимальные точности моделей, построенных в лабораторных работах 1-3. Как можно объяснить полученные различия?
+
+Результаты на валидационной выборке:
+
+* логистическая регрессия &mdash; 81%;
+
+* все модели с только полносвязными слоями &mdash; 0%;
+
+* модель с двумя свёрточными слоями и одним полносвязным &mdash; 60%;
+
+* модель с одним свёрточным слоем, операцией пулинга и одним полносвязным &mdash; 56%;
+
+* _LeNet-5_ &mdash; два свёрточных слоя две операции пулинга два полносвязных слоя &mdash; 58%.
+
+Получается, что логистическая регрессия дала наилучший результат.
+
+Объяснить это можно недостатками самостоятельной реализации сетей.
 """
