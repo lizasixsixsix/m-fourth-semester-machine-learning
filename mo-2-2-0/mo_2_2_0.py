@@ -54,11 +54,21 @@ import tensorflow as tf
 
 import numpy as np
 
+dataframe_test = dataframe.sample(frac = 0.1)
+
+dataframe = dataframe.drop(dataframe_test.index)
+
 x = np.asarray(list(dataframe['data']))[..., np.newaxis]
 
 x = tf.keras.utils.normalize(x, axis = 1)
 
 x.shape
+
+x_test = np.asarray(list(dataframe_test['data']))[..., np.newaxis]
+
+x_test = tf.keras.utils.normalize(x_test, axis = 1)
+
+x_test.shape
 
 IMAGE_DIM_0, IMAGE_DIM_1 = x.shape[1], x.shape[2]
 
@@ -67,6 +77,10 @@ from tensorflow.keras.utils import to_categorical
 y = to_categorical(dataframe['label'].astype('category').cat.codes.astype('int32'))
 
 y.shape
+
+y_test = to_categorical(dataframe_test['label'].astype('category').cat.codes.astype('int32'))
+
+y_test.shape
 
 LAYER_WIDTH = 5000
 
@@ -100,11 +114,15 @@ EPOCHS_N = 10
 
 model.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
 
+results = model.evaluate(x_test, y_test)
+
+print('Test loss, test accuracy:', results)
+
 """### Задание 2
 
 Как улучшилась точность классификатора по сравнению с логистической регрессией?
 
-Стало хуже &mdash; на валидационной выборке точность составила 0. Похоже, что данная модель совершенно не подходит для решения этой задачи.
+Стало хуже &mdash; на тестовой выборке точность составила 10%. Похоже, что данная модель совершенно не подходит для решения этой задачи.
 
 ### Задание 3
 
@@ -146,7 +164,11 @@ model_2.summary()
 
 model_2.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
 
-"""Ни регуляризация, ни сброс нейронов не помогли &mdash; модель всё ещё показывает 0 точности на валидационной выборке.
+results_2 = model_2.evaluate(x_test, y_test)
+
+print('Test loss, test accuracy:', results_2)
+
+"""Регуляризация и сброс нейронов значительно помогли &mdash; модель показывает 72% точности на тестовой выборке!
 
 ### Задание 4
 
@@ -163,7 +185,11 @@ model_2.compile(optimizer = dyn_lr_sgd,
 
 model_2.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
 
-"""Динамически изменяемая скорость обучения не улучшила результат. Несмотря на то, что точность на обучающей выборке составила 78%, на валидационной по-прежнему 0%.
+results_3 = model_2.evaluate(x_test, y_test)
 
-Можно сделать вывод, что модель с полносвязными слоями не подходит для решения задачи распознавания изображений.
+print('Test loss, test accuracy:', results_3)
+
+"""Динамически изменяемая скорость обучения не улучшила результат &mdash; 72% на тестовой выборке.
+
+Можно сделать вывод, что модель с полносвязными слоями может использоваться для решения задачи распознавания изображений, однако она очевидно не является наилучшей.
 """
