@@ -93,7 +93,9 @@ labels = asarray(labels)
 
 print(photos.shape, labels.shape)
 
-"""### Задание 2
+"""Разделение выборки будет применено автоматически как параметр `validation_split` метода `model.fit()`.
+
+### Задание 2
 
 Реализуйте глубокую нейронную сеть с как минимум тремя сверточными слоями. Какое качество классификации получено?
 """
@@ -128,14 +130,11 @@ model.summary()
 
 photos_norm = tf.keras.utils.normalize(photos, axis = 1)
 
-batch_size = 32
+model.fit(x = photos, y = labels, epochs = 20, validation_split = 0.15)
 
-r = 780
+"""Результат получится плохой &mdash; сеть совсем не справилась с распознаванием.
 
-model.fit(x = photos[:r * batch_size], y = labels[:r * batch_size], epochs = 20, batch_size = batch_size,
-          validation_split = 0.15)
-
-"""### Задание 3
+### Задание 3
 
 Примените дополнение данных (_data augmentation_). Как это повлияло на качество классификатора?
 
