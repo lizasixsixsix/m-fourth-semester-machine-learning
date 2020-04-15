@@ -56,11 +56,21 @@ tf.compat.v1.disable_eager_execution()
 
 import numpy as np
 
+dataframe_test = dataframe.sample(frac = 0.1)
+
+dataframe = dataframe.drop(dataframe_test.index)
+
 x = np.asarray(list(dataframe['data']))[..., np.newaxis]
 
 x = tf.keras.utils.normalize(x, axis = 1)
 
 x.shape
+
+x_test = np.asarray(list(dataframe_test['data']))[..., np.newaxis]
+
+x_test = tf.keras.utils.normalize(x_test, axis = 1)
+
+x_test.shape
 
 import matplotlib.pyplot as plt
 
@@ -73,6 +83,10 @@ from tensorflow.keras.utils import to_categorical
 y = to_categorical(dataframe['label'].astype('category').cat.codes.astype('int32'))
 
 y.shape
+
+y_test = to_categorical(dataframe_test['label'].astype('category').cat.codes.astype('int32'))
+
+y_test.shape
 
 CLASSES_N = y.shape[1]
 
@@ -104,7 +118,11 @@ EPOCHS_N = 10
 
 model.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
 
-"""Лучшая точность построенной модели на валидационной выборке составила 60%.
+results = model.evaluate(x_test, y_test)
+
+print('Test loss, test accuracy:', results)
+
+"""Лучшая точность построенной модели на тестовой выборке составила 88%.
 
 ### Задание 2
 
@@ -129,7 +147,11 @@ model_2.summary()
 
 model_2.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
 
-"""Замена свёрточного слоя на операцию пулинга снизила лучшую точность на валидационной выборке до 56%.
+results_2 = model_2.evaluate(x_test, y_test)
+
+print('Test loss, test accuracy:', results_2)
+
+"""Замена свёрточного слоя на операцию пулинга снизила точность на тестовой выборке до 87%.
 
 ### Задание 3
 
@@ -156,7 +178,11 @@ model_3.compile(optimizer = 'adam',
 
 model_3.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
 
-"""Удивительно, но _LeNet-5_ показала результат хуже, чем первая модель, несмотря на то, что включала её слои и даже больше &mdash; всего 58% на валидационной выборке.
+results_3 = model_3.evaluate(x_test, y_test)
+
+print('Test loss, test accuracy:', results_3)
+
+"""Удивительно, но _LeNet-5_ показала результат хуже, чем первая модель &mdash; 87% на тестовой выборке. Объяснить это можно тем, что первая модель содержит свёрточный слой с большей выходной размерностью.
 
 ### Задание 4
 
@@ -166,15 +192,17 @@ model_3.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
 
 * логистическая регрессия &mdash; 81%;
 
-* все модели с только полносвязными слоями &mdash; 0%;
+* модель с только полносвязными слоями &mdash; 10%;
 
-* модель с двумя свёрточными слоями и одним полносвязным &mdash; 60%;
+    * с регуляризацией и сбросом нейронов &mdash; 72%;
 
-* модель с одним свёрточным слоем, операцией пулинга и одним полносвязным &mdash; 56%;
+        * с адапливны шагом &mdash; 72%;
 
-* _LeNet-5_ &mdash; два свёрточных слоя две операции пулинга два полносвязных слоя &mdash; 58%.
+* модель с двумя свёрточными слоями и одним полносвязным &mdash; 88%;
 
-Получается, что логистическая регрессия дала наилучший результат.
+* модель с одним свёрточным слоем, операцией пулинга и одним полносвязным &mdash; 87%;
 
-Объяснить это можно недостатками самостоятельной реализации сетей.
+* _LeNet-5_ &mdash; два свёрточных слоя две операции пулинга два полносвязных слоя &mdash; 87%.
+
+Объяснение превосходства свёрточных сетей над полносвязными &mdash; такая архитектура просто предназначена для работы с изображениями.
 """
