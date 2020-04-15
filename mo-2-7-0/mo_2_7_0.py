@@ -23,6 +23,8 @@ Original file is located at
 ### Задание 1
 
 Загрузите данные. Преобразуйте текстовые файлы во внутренние структуры данных, которые используют индексы вместо слов.
+
+Будем брать первые `MAX_LENGTH` слов, а если в отзыве слов меньше, чем это число, то применять паддинг.
 """
 
 from google.colab import drive
@@ -54,21 +56,11 @@ all_df = pd.read_csv(DATA_FILE_PATH)
 
 print(all_df.shape)
 
-train_df = all_df.sample(frac = 0.7)
-all_df = all_df.drop(train_df.index)
-
-val_df = all_df.sample(frac = 0.5)
-test_df = all_df.drop(val_df.index)
-
-print(train_df.shape)
-print(val_df.shape)
-print(test_df.shape)
-
 import nltk
 
 nltk.download('punkt')
 
-MAX_LENGTH = 200
+MAX_LENGTH = 40
 
 STRING_DTYPE = '<U12'
 
@@ -101,32 +93,28 @@ def encode_and_tokenize(_dataframe):
     tttt = _dataframe.apply(lambda row: tokenize_row(row['review']), axis = 1)
     llll = _dataframe.apply(lambda row: encode_row(row['sentiment']), axis = 1)
 
-    data_dict = { 'label': llll, 'tokens': tttt }
+    data_dict_ = { 'label': llll, 'tokens': tttt }
 
-    encoded_and_tokenized = pd.DataFrame(data_dict, columns = ['label', 'tokens'])
+    encoded_and_tokenized_ = pd.DataFrame(data_dict_, columns = ['label', 'tokens'])
 
-    return encoded_and_tokenized
+    return encoded_and_tokenized_
 
-train_df_tokenized = encode_and_tokenize(train_df)
-val_df_tokenized = encode_and_tokenize(val_df)
-test_df_tokenized = encode_and_tokenize(test_df)
+all_df_tokenized = encode_and_tokenize(all_df)
 
 from collections import Counter
 
-def get_tokens_list(_dataframes_list):
-    
-    all_dataframe_ = pd.concat(_dataframes_list)
+def get_tokens_list(_dataframe):
     
     all_tokens_ = []
     
-    for sent_ in all_dataframe_['tokens'].values:
+    for sent_ in _dataframe['tokens'].values:
         all_tokens_.extend(sent_)
 
     tokens_counter_ = Counter(all_tokens_)
                 
     return [t for t, _ in tokens_counter_.most_common(LIMIT_OF_TOKENS)]
 
-tokens_list = get_tokens_list([train_df_tokenized, val_df_tokenized, test_df_tokenized])
+tokens_list = get_tokens_list(all_df_tokenized)
 
 word_to_int_dict = {}
 
@@ -143,17 +131,13 @@ def encode_and_tokenize(_dataframe):
 
     iiii = _dataframe.apply(lambda row: intize_row(row['tokens']), axis = 1)
 
-    data_dict = { 'label': _dataframe['label'], 'ints': iiii }
+    data_dict_ = { 'label': _dataframe['label'], 'ints': iiii }
 
-    intized = pd.DataFrame(data_dict, columns = ['label', 'ints'])
+    intized_ = pd.DataFrame(data_dict_, columns = ['label', 'ints'])
 
-    return intized
+    return intized_
 
-train_df_intized = encode_and_tokenize(train_df_tokenized)
-val_df_intized = encode_and_tokenize(val_df_tokenized)
-test_df_intized = encode_and_tokenize(test_df_tokenized)
-
-train_df_intized
+all_df_intized = encode_and_tokenize(all_df_tokenized)
 
 """### Задание 2
 
@@ -169,14 +153,24 @@ train_df_intized
 import tensorflow as tf
 from tensorflow import keras
 
+"""Здесь будем использовать такую конфигурацию рекуррентного _LSTM_-слоя, которая позволит использовать очень быструю _cuDNN_ имплементацию."""
+
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Bidirectional, LSTM, Dropout
+from tensorflow.keras.layers import Bidirectional, LSTM, Dense
+
+# The requirements to use the cuDNN implementation are:
+# 1. `activation` == `tanh`
+# 2. `recurrent_activation` == `sigmoid`
+# 3. `recurrent_dropout` == 0
+# 4. `unroll` is `False`
+# 5. `use_bias` is `True`
+# 6. `reset_after` is `True`
+# 7. Inputs, if use masking, are strictly right-padded.
 
 model = tf.keras.Sequential()
 
-model.add(Bidirectional(LSTM(MAX_LENGTH, return_sequences = False, recurrent_dropout = 0.2), merge_mode = 'concat',
+model.add(Bidirectional(LSTM(100, return_sequences = False), merge_mode = 'concat',
           input_shape = (MAX_LENGTH, 1)))
-model.add(Dropout(0.2))
 model.add(Dense(1, activation = 'sigmoid'))
 
 model.compile(optimizer = 'adam',
@@ -185,27 +179,100 @@ model.compile(optimizer = 'adam',
 
 model.summary()
 
-X_train = np.asarray(list(train_df_intized['ints'].values), dtype = float)[..., np.newaxis]
-X_test = np.asarray(list(test_df_intized['ints'].values), dtype = float)[..., np.newaxis]
+X_intized = np.asarray(list(all_df_intized['ints'].values), dtype = float)[..., np.newaxis]
 
-y_train = np.asarray(list(train_df_intized['label'].values))
-y_test = np.asarray(list(test_df_intized['label'].values))
+y_intized = np.asarray(list(all_df_intized['label'].values))
 
-r = 1093
+model.fit(x = X_intized, y = y_intized, validation_split = 0.15, epochs = 20)
 
-r_v = 234
+"""Как и ожидалось, использование эмбеддингов показало лучший результат, чем кодирование просто целыми числами.
 
-batch_size = 32
-
-model.fit(x = X_train[:r * batch_size], y = y_train[:r * batch_size],
-          validation_data = (X_test[:r_v * batch_size], y_test[:r_v * batch_size]),
-          epochs = 5, batch_size = batch_size)
-
-"""### Задание 3
+### Задание 3
 
 Используйте индексы слов и их различное внутреннее представление (_word2vec_, _glove_). Как влияет данное преобразование на качество классификации?
 
-### Задание 4
+Используем 300-мерные вектора _FastTest_ &mdash; лучшую на сегодняшний день имплементацию word2vec: https://fasttext.cc/docs/en/english-vectors.html. Файл пришлось доработать &mdash; 9-я строка не читалась.
+"""
+
+# VECTORS_ARCHIVE_NAME = 'wiki-news-300d-1M-fixed.zip'
+
+# VECTORS_FILE_NAME = 'wiki-news-300d-1M-fixed.vec'
+
+# VECTORS_LOCAL_DIR_NAME = 'vectors'
+
+# with ZipFile(os.path.join(BASE_DIR, VECTORS_ARCHIVE_NAME), 'r') as zip_:
+#     zip_.extractall(VECTORS_LOCAL_DIR_NAME)
+
+"""Создадим уменьшенный словарь, содержащий только встреченные токены, чтобы уменьшить нагрузку на _Google Drive_:"""
+
+# def build_vectors_dict(_actual_tokens, _vectors_file_path, _unknown_token = 'unknown'):
+
+#     vec_data_ = pd.read_csv(_vectors_file_path, sep = ' ', header = None, skiprows = [9])
+        
+#     actual_vectors_ = [x for x in vec_data_.values if x[0] in _actual_tokens or x[0] == _unknown_token]
+
+#     return actual_vectors_
+
+# actual_vectors = build_vectors_dict(tokens_list, os.path.join(VECTORS_LOCAL_DIR_NAME, VECTORS_FILE_NAME))
+
+# vectors_np = np.array(actual_vectors)
+
+# vectors_dict = dict(zip(vectors_np[:, 0], vectors_np[:, 1:]))
+
+# vectors_dict_file_name = 'word-vec-dict-{}-items'.format(len(vectors_dict))
+
+# vectors_dict_file_path = os.path.join(BASE_DIR, vectors_dict_file_name)
+
+# np.savez_compressed(vectors_dict_file_path, vectors_dict, allow_pickle = True)
+
+vectors_dict_file_path = './drive/My Drive/Colab Files/mo-2/word-vec-dict-56485-items.npz'
+
+vectors_dict_data = np.load(vectors_dict_file_path, allow_pickle = True)
+
+vectors_dict = vectors_dict_data['arr_0'][()]
+
+VECTORS_LENGTH = 300
+
+def tokens_to_vectors(_word_to_vec_dict, _tokens, _unknown_token):
+    return [_word_to_vec_dict[t]
+                if t in _word_to_vec_dict
+                else _word_to_vec_dict[_unknown_token]
+            for t in _tokens]
+
+def row_to_vectors(_tokens):
+    return np.array(tokens_to_vectors(vectors_dict, _tokens, 'unknown'))
+
+def vectorize(_dataframe):
+
+    vvvv = _dataframe.apply(lambda row: row_to_vectors(row['tokens']), axis = 1)
+
+    data_dict_ = { 'label': _dataframe['label'], 'vectors': vvvv }
+
+    vectorized_ = pd.DataFrame(data_dict_, columns = ['label', 'vectors'])
+
+    return vectorized_
+
+all_df_vectorized = vectorize(all_df_tokenized)
+
+X_vectorized = np.asarray(list(all_df_vectorized['vectors'].values), dtype = float)
+
+y_vectorized = np.asarray(list(all_df_intized['label'].values))
+
+model = tf.keras.Sequential()
+
+model.add(Bidirectional(LSTM(100, return_sequences = False), merge_mode = 'concat',
+          input_shape = (MAX_LENGTH, VECTORS_LENGTH)))
+model.add(Dense(1, activation = 'sigmoid'))
+
+model.compile(optimizer = 'adam',
+              loss = 'binary_crossentropy',
+              metrics = ['accuracy'])
+
+model.summary()
+
+model.fit(x = X_vectorized, y = y_vectorized, validation_split = 0.15, epochs = 20)
+
+"""### Задание 4
 
 Поэкспериментируйте со структурой сети (добавьте больше рекуррентных, полносвязных или сверточных слоев). Как это повлияло на качество классификации?
 
