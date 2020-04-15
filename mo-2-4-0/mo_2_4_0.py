@@ -160,8 +160,6 @@ second_ds_train_file = load_file(DS_URL_FOLDER, TRAIN_DS_NAME, SECOND_DS_EXT, 's
 second_ds_test_file = load_file(DS_URL_FOLDER, TEST_DS_NAME, SECOND_DS_EXT, 'second')
 second_ds_extra_file = load_file(DS_URL_FOLDER, EXTRA_DS_NAME, SECOND_DS_EXT, 'second')
 
-# ! ls extra_first/extra
-
 from scipy import io
 
 second_ds_train = io.loadmat(second_ds_train_file)
@@ -215,9 +213,9 @@ model_2.fit(x = X_second_ds_train, y = y_second_ds_train_cat,
             validation_data = (X_second_ds_test, y_second_ds_test_cat),
             epochs = EPOCHS_N)
 
-"""Прежде всего, в модели изменилось то, что добавился ещё один класс &mdash; _нет цифры_. Это связано с тем, что в данные представляют собой снимки скользящего окна, в котором не всегда есть то, что мы хотим распознать.
+"""Прежде всего, в модели изменилось то, что добавился ещё один класс &mdash; _не распознано_.
 
-Несмотря на это, результат также неплох &mdash; точность распознавания на валидационной выборке составила 81,4%.
+Несмотря на то, что эти данные более сложны для распознавания, результат также неплох &mdash; точность распознавания на валидационной выборке составила 81,4%.
 
 ### Задание 3
 
