@@ -94,16 +94,11 @@ model.compile(optimizer = 'sgd',
 
 model.summary()
 
-BATCH_SIZE = 128
-
-r = 3608
-
 VAL_SPLIT_RATE = 0.1
 
-EPOCHS_N = 20
+EPOCHS_N = 10
 
-model.fit(x = x[:r * BATCH_SIZE], y = y[:r * BATCH_SIZE], epochs = EPOCHS_N, batch_size = BATCH_SIZE,
-          validation_split = VAL_SPLIT_RATE)
+model.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
 
 """### Задание 2
 
@@ -149,8 +144,7 @@ model_2.compile(optimizer = 'sgd',
 
 model_2.summary()
 
-model_2.fit(x = x[:r * BATCH_SIZE], y = y[:r * BATCH_SIZE], epochs = EPOCHS_N, batch_size = BATCH_SIZE,
-            validation_split = VAL_SPLIT_RATE)
+model_2.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
 
 """Ни регуляризация, ни сброс нейронов не помогли &mdash; модель всё ещё показывает 0 точности на валидационной выборке.
 
@@ -167,10 +161,9 @@ model_2.compile(optimizer = dyn_lr_sgd,
                 loss = cat_cross_from_logits,
                 metrics = ['categorical_accuracy'])
 
-model_2.fit(x = x[:r * BATCH_SIZE], y = y[:r * BATCH_SIZE], epochs = EPOCHS_N, batch_size = BATCH_SIZE,
-            validation_split = VAL_SPLIT_RATE)
+model_2.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
 
-"""Динамически изменяемая скорость обучения не улучшила результат. Несмотря на то, что точность на обучающей выборке составила 81%, на валидационной по-прежнему 0%.
+"""Динамически изменяемая скорость обучения не улучшила результат. Несмотря на то, что точность на обучающей выборке составила 78%, на валидационной по-прежнему 0%.
 
 Можно сделать вывод, что модель с полносвязными слоями не подходит для решения задачи распознавания изображений.
 """
