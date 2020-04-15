@@ -265,6 +265,8 @@ for size_ in sizes:
     
     scores[size_] = clfs[size_].score(X_test, y_test)
 
+print(scores)
+
 import seaborn as sns
 
 from matplotlib import rcParams
