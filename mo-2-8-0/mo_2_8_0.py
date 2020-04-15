@@ -136,7 +136,58 @@ print(residuals.describe())
 
 Повторите эксперимент по прогнозированию, реализовав рекуррентную нейронную сеть (с как минимум 2 рекуррентными слоями).
 
-### Задание 5
+Сначала нужно создать датасет из данных.
+"""
+
+! pip install tensorflow-gpu --pre --quiet
+
+! pip show tensorflow-gpu
+
+TIME_STEPS = 8
+
+X_ts = all_df['Monthly Mean Total Sunspot Number']
+
+import numpy as np
+from datetime import timezone
+
+def timeseries_to_dataset(_X_ts, _y_ts, _time_steps):
+
+    samples_n_ = len(_X_ts) - _time_steps
+
+    X_ = np.zeros((samples_n_, _time_steps))
+    y_ = np.zeros((samples_n_, ))
+
+    for i in range(samples_n_):
+
+        X_[i] = _X_ts[i:(i + _time_steps)]
+
+        y_[i] = _X_ts[(i + _time_steps)]
+
+    return X_[..., np.newaxis], y_
+
+X, y = timeseries_to_dataset(X_ts, y_ts, TIME_STEPS)
+
+import tensorflow as tf
+from tensorflow import keras
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
+
+model = tf.keras.Sequential()
+
+model.add(LSTM(8, return_sequences = True, input_shape = X.shape[-2:]))
+model.add(LSTM(8))
+model.add(Dense(1))
+
+model.compile(optimizer = 'adam',
+              loss = 'mae',
+              metrics = ['accuracy'])
+
+model.summary()
+
+model.fit(x = X, y = y, validation_split = 0.15, epochs = 100)
+
+"""### Задание 5
 
 Сравните качество прогноза моделей.
 
