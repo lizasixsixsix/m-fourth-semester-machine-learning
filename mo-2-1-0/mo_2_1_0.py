@@ -26,20 +26,6 @@ http://yaroslavvb.blogspot.sg/2011/09/notmnist-dataset.html
 Загрузите данные и отобразите на экране несколько из изображений с помощью языка Python.
 """
 
-# from google.colab import drive
-
-# drive.mount('/content/drive', force_remount = True)
-
-# BASE_DIR = '/content/drive/My Drive/Colab Files/mo-2'
-
-# import sys
-
-# sys.path.append(BASE_DIR)
-
-# import os
-
-# os.chdir(BASE_DIR)
-
 SMALL_DS_URL = 'https://commondatastorage.googleapis.com/books1000/notMNIST_small.tar.gz'
 LARGE_DS_URL = 'https://commondatastorage.googleapis.com/books1000/notMNIST_large.tar.gz'
 
