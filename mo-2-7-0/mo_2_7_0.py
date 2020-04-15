@@ -153,6 +153,10 @@ all_df_intized = encode_and_tokenize(all_df_tokenized)
 import tensorflow as tf
 from tensorflow import keras
 
+# To fix memory leak: https://github.com/tensorflow/tensorflow/issues/33009
+
+tf.compat.v1.disable_eager_execution()
+
 """Здесь будем использовать такую конфигурацию рекуррентного _LSTM_-слоя, которая позволит использовать очень быструю _cuDNN_ имплементацию."""
 
 from tensorflow.keras.models import Sequential
@@ -185,7 +189,7 @@ y_intized = np.asarray(list(all_df_intized['label'].values))
 
 model.fit(x = X_intized, y = y_intized, validation_split = 0.15, epochs = 20)
 
-"""Как и ожидалось, использование эмбеддингов показало лучший результат, чем кодирование слов просто целыми числами.
+"""На валидационной выборке удалось достичь точности 57%.
 
 ### Задание 3
 
@@ -272,16 +276,19 @@ model_2.summary()
 
 model_2.fit(x = X_vectorized, y = y_vectorized, validation_split = 0.15, epochs = 20)
 
-"""### Задание 4
+"""Как и ожидалось, использование эмбеддингов показало лучший результат, чем кодирование слов просто целыми числами &mdash; 77%.
+
+### Задание 4
 
 Поэкспериментируйте со структурой сети (добавьте больше рекуррентных, полносвязных или сверточных слоев). Как это повлияло на качество классификации?
 """
 
 model_3 = tf.keras.Sequential()
 
-model_3.add(Bidirectional(LSTM(10, return_sequences = False), merge_mode = 'concat',
-model_3.add(Bidirectional(LSTM(10, return_sequences = False), merge_mode = 'concat'))
-model_3.add(Dense(100, activation = 'linear'))
+model_3.add(Bidirectional(LSTM(5, return_sequences = True), merge_mode = 'concat',
+            input_shape = (MAX_LENGTH, VECTORS_LENGTH)))
+model_3.add(LSTM(1, return_sequences = False))
+model_3.add(Dense(10, activation = 'linear'))
 model_3.add(Dense(1, activation = 'sigmoid'))
 
 model_3.compile(optimizer = 'adam',
@@ -292,7 +299,9 @@ model_3.summary()
 
 model_3.fit(x = X_vectorized, y = y_vectorized, validation_split = 0.15, epochs = 20)
 
-"""### Задание 5
+"""Добавление ещё-одного рекуррентного слоя не изменило результат &mdash; точность 77% на валидационной выборке.
+
+### Задание 5
 
 Используйте предобученную рекуррентную нейронную сеть (например, _DeepMoji_ или что-то подобное).
 
