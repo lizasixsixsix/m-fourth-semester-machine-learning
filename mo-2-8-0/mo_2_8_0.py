@@ -112,25 +112,22 @@ plt.show()
 Примените модель _ARIMA_ для прогнозирования значений данного временного ряда.
 """
 
-from statsmodels.tsa.arima_model import ARIMA
+! pip install pmdarima
 
-model = ARIMA(all_df['Monthly Mean Total Sunspot Number'].values, order = (5,1,0))
+! pip show pmdarima
 
-model_fit = model.fit(disp=0)
+test_period = 6 * 12
 
-print(model_fit.summary())
+from pmdarima.arima import auto_arima
 
-residuals = pd.DataFrame(model_fit.resid)
+arima = auto_arima(all_df['Monthly Mean Total Sunspot Number'][:-test_period],
+                   trace = True, error_action = 'ignore', suppress_warnings = True, seasonal = True, m = 12)
 
-residuals.plot()
+arima_forecast = arima.predict(n_periods = test_period)
 
-plt.show()
+from sklearn.metrics import mean_squared_error
 
-residuals.plot(kind = 'kde')
-
-plt.show()
-
-print(residuals.describe())
+mean_squared_error(all_df['Monthly Mean Total Sunspot Number'][-test_period:], arima_forecast)
 
 """### Задание 4
 
@@ -143,16 +140,16 @@ print(residuals.describe())
 
 ! pip show tensorflow-gpu
 
-TIME_STEPS = 8
-
-X_ts = all_df['Monthly Mean Total Sunspot Number']
+TIME_STEPS = 60
 
 import numpy as np
 from datetime import timezone
 
-def timeseries_to_dataset(_X_ts, _y_ts, _time_steps):
+def timeseries_to_dataset(_X_ts, _time_steps):
 
     samples_n_ = len(_X_ts) - _time_steps
+
+    print( len(_X_ts))
 
     X_ = np.zeros((samples_n_, _time_steps))
     y_ = np.zeros((samples_n_, ))
@@ -165,7 +162,9 @@ def timeseries_to_dataset(_X_ts, _y_ts, _time_steps):
 
     return X_[..., np.newaxis], y_
 
-X, y = timeseries_to_dataset(X_ts, y_ts, TIME_STEPS)
+X, y = timeseries_to_dataset(all_df['Monthly Mean Total Sunspot Number'][:-test_period].values, TIME_STEPS)
+
+X_test, y_test = timeseries_to_dataset(all_df['Monthly Mean Total Sunspot Number'][-test_period:].values, TIME_STEPS)
 
 import tensorflow as tf
 from tensorflow import keras
@@ -175,17 +174,21 @@ from tensorflow.keras.layers import LSTM, Dense
 
 model = tf.keras.Sequential()
 
-model.add(LSTM(8, return_sequences = True, input_shape = X.shape[-2:]))
-model.add(LSTM(8))
+model.add(LSTM(8, activation = 'tanh', return_sequences = True, input_shape = X.shape[-2:]))
+model.add(LSTM(8, activation = 'tanh'))
 model.add(Dense(1))
 
 model.compile(optimizer = 'adam',
-              loss = 'mae',
+              loss = 'mse',
               metrics = ['accuracy'])
 
 model.summary()
 
-model.fit(x = X, y = y, validation_split = 0.15, epochs = 100)
+model.fit(x = X, y = y, validation_split = 0.15, epochs = 20, verbose = 0)
+
+results = model.evaluate(X_test, y_test)
+
+print('Test mse, test accuracy:', results)
 
 """### Задание 5
 
