@@ -54,7 +54,11 @@ import pandas as pd
 
 all_df = pd.read_csv(DATA_FILE_PATH)
 
-print(all_df.shape)
+df_test = all_df.sample(frac = 0.1)
+
+df_train = all_df.drop(df_test.index)
+
+df_train.shape, df_test.shape
 
 import nltk
 
@@ -99,7 +103,8 @@ def encode_and_tokenize(_dataframe):
 
     return encoded_and_tokenized_
 
-all_df_tokenized = encode_and_tokenize(all_df)
+df_train_tokenized = encode_and_tokenize(df_train)
+df_test_tokenized = encode_and_tokenize(df_test)
 
 from collections import Counter
 
@@ -114,7 +119,7 @@ def get_tokens_list(_dataframe):
                 
     return [t for t, _ in tokens_counter_.most_common(LIMIT_OF_TOKENS)]
 
-tokens_list = get_tokens_list(all_df_tokenized)
+tokens_list = get_tokens_list(pd.concat([df_train_tokenized, df_test_tokenized]))
 
 word_to_int_dict = {}
 
@@ -137,7 +142,8 @@ def encode_and_tokenize(_dataframe):
 
     return intized_
 
-all_df_intized = encode_and_tokenize(all_df_tokenized)
+df_train_intized = encode_and_tokenize(df_train_tokenized)
+df_test_intized = encode_and_tokenize(df_test_tokenized)
 
 """### Задание 2
 
@@ -183,11 +189,17 @@ model.compile(optimizer = 'adam',
 
 model.summary()
 
-X_intized = np.asarray(list(all_df_intized['ints'].values), dtype = float)[..., np.newaxis]
+X_train_intized = np.asarray(list(df_train_intized['ints'].values), dtype = float)[..., np.newaxis]
+X_test_intized = np.asarray(list(df_test_intized['ints'].values), dtype = float)[..., np.newaxis]
 
-y_intized = np.asarray(list(all_df_intized['label'].values))
+y_train_intized = np.asarray(list(df_train_intized['label'].values))
+y_test_intized = np.asarray(list(df_test_intized['label'].values))
 
-model.fit(x = X_intized, y = y_intized, validation_split = 0.15, epochs = 20)
+model.fit(x = X_train_intized, y = y_train_intized, validation_split = 0.15, epochs = 20)
+
+results = model.evaluate(X_test_intized, y_test_intized)
+
+print('Test loss, test accuracy:', results)
 
 """На валидационной выборке удалось достичь точности 57%.
 
@@ -256,11 +268,14 @@ def vectorize(_dataframe):
 
     return vectorized_
 
-all_df_vectorized = vectorize(all_df_tokenized)
+df_train_vectorized = vectorize(df_train_tokenized)
+df_test_vectorized = vectorize(df_test_tokenized)
 
-X_vectorized = np.asarray(list(all_df_vectorized['vectors'].values), dtype = float)
+X_train_vectorized = np.asarray(list(df_train_vectorized['vectors'].values), dtype = float)
+X_test_vectorized = np.asarray(list(df_test_vectorized['vectors'].values), dtype = float)
 
-y_vectorized = np.asarray(list(all_df_intized['label'].values))
+y_train_vectorized = np.asarray(list(df_train_vectorized['label'].values))
+y_test_vectorized = np.asarray(list(df_test_vectorized['label'].values))
 
 model_2 = tf.keras.Sequential()
 
@@ -274,9 +289,13 @@ model_2.compile(optimizer = 'adam',
 
 model_2.summary()
 
-model_2.fit(x = X_vectorized, y = y_vectorized, validation_split = 0.15, epochs = 20)
+model_2.fit(x = X_train_vectorized, y = y_train_vectorized, validation_split = 0.15, epochs = 20)
 
-"""Как и ожидалось, использование эмбеддингов показало лучший результат, чем кодирование слов просто целыми числами &mdash; 77%.
+results_2 = model_2.evaluate(X_test_vectorized, y_test_vectorized)
+
+print('Test loss, test accuracy:', results_2)
+
+"""Как и ожидалось, использование эмбеддингов показало лучший результат, чем кодирование слов просто целыми числами &mdash; 74%.
 
 ### Задание 4
 
@@ -297,13 +316,19 @@ model_3.compile(optimizer = 'adam',
 
 model_3.summary()
 
-model_3.fit(x = X_vectorized, y = y_vectorized, validation_split = 0.15, epochs = 20)
+model_3.fit(x = X_train_vectorized, y = y_train_vectorized, validation_split = 0.15, epochs = 20)
 
-"""Добавление ещё-одного рекуррентного слоя не изменило результат &mdash; точность 77% на валидационной выборке.
+results_3 = model_3.evaluate(X_test_vectorized, y_test_vectorized)
+
+print('Test loss, test accuracy:', results_3)
+
+"""Добавление ещё одного рекуррентного слоя ненамного улучшило результат &mdash; точность 76% на тестовой выборке.
 
 ### Задание 5
 
 Используйте предобученную рекуррентную нейронную сеть (например, _DeepMoji_ или что-то подобное).
 
 Какой максимальный результат удалось получить на контрольной выборке?
+
+На своих моделях удалось достигнуть максимальной точности 76%.
 """
