@@ -52,9 +52,7 @@ import pandas as pd
 train_df = pd.read_csv(TRAIN_FILE_PATH)
 test_df = pd.read_csv(TEST_FILE_PATH)
 
-all_df = pd.concat([train_df, test_df])
-
-print(all_df.shape)
+train_df.shape, test_df.shape
 
 IMAGE_DIM = 28
 
@@ -75,7 +73,8 @@ def to_images_and_labels(_dataframe):
 
     return reshaped_
 
-all_df_reshaped = to_images_and_labels(all_df)
+train_df_reshaped = to_images_and_labels(train_df)
+test_df_reshaped = to_images_and_labels(test_df)
 
 """### Задание 2
 
@@ -91,11 +90,15 @@ all_df_reshaped = to_images_and_labels(all_df)
 from tensorflow.keras.utils import to_categorical
 import numpy as np
 
-X = np.asarray(list(all_df_reshaped['image']))
+X_train = np.asarray(list(train_df_reshaped['image']))
+X_test = np.asarray(list(test_df_reshaped['image']))
 
-y = to_categorical(all_df_reshaped['label'].astype('category').cat.codes.astype('int32'))
+y_train = to_categorical(train_df_reshaped['label'].astype('category').cat.codes.astype('int32'))
+y_test = to_categorical(test_df_reshaped['label'].astype('category').cat.codes.astype('int32'))
 
-CLASSES_N = y.shape[1]
+X_train.shape, y_train.shape, X_test.shape, y_test.shape
+
+CLASSES_N = y_train.shape[1]
 
 import tensorflow as tf
 
@@ -118,9 +121,13 @@ model.compile(optimizer = 'adam',
               loss = 'categorical_crossentropy',
               metrics = ['categorical_accuracy'])
 
-model.fit(x = X, y = y, epochs = 10, validation_split = 0.15)
+model.fit(x = X_train, y = y_train, epochs = 20, validation_split = 0.15)
 
-"""За 10 эпох удалось достичь 100%-й точности на валидационной выборке!
+results = model.evaluate(X_test, y_test)
+
+print('Test loss, test accuracy:', results)
+
+"""За 20 эпох удалось достичь точности в 87% на тестовой выборке.
 
 ### Задание 3
 
