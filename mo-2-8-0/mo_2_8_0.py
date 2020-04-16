@@ -140,7 +140,9 @@ mean_squared_error(all_df['Monthly Mean Total Sunspot Number'][-test_period:], a
 
 ! pip show tensorflow-gpu
 
-TIME_STEPS = 60
+TIME_STEPS = 100
+
+TEST_PERIOD = 1000
 
 import numpy as np
 from datetime import timezone
@@ -162,9 +164,9 @@ def timeseries_to_dataset(_X_ts, _time_steps):
 
     return X_[..., np.newaxis], y_
 
-X, y = timeseries_to_dataset(all_df['Monthly Mean Total Sunspot Number'][:-test_period].values, TIME_STEPS)
+X, y = timeseries_to_dataset(all_df['Monthly Mean Total Sunspot Number'][:-TEST_PERIOD].values, TIME_STEPS)
 
-X_test, y_test = timeseries_to_dataset(all_df['Monthly Mean Total Sunspot Number'][-test_period:].values, TIME_STEPS)
+X_test, y_test = timeseries_to_dataset(all_df['Monthly Mean Total Sunspot Number'][-TEST_PERIOD:].values, TIME_STEPS)
 
 import tensorflow as tf
 from tensorflow import keras
@@ -174,8 +176,8 @@ from tensorflow.keras.layers import LSTM, Dense
 
 model = tf.keras.Sequential()
 
-model.add(LSTM(8, activation = 'tanh', return_sequences = True, input_shape = X.shape[-2:]))
-model.add(LSTM(8, activation = 'tanh'))
+model.add(LSTM(8, activation = 'relu', return_sequences = True, input_shape = X.shape[-2:]))
+model.add(LSTM(8, activation = 'relu'))
 model.add(Dense(1))
 
 model.compile(optimizer = 'adam',
@@ -195,4 +197,6 @@ print('Test mse, test accuracy:', results)
 Сравните качество прогноза моделей.
 
 Какой максимальный результат удалось получить на контрольной выборке?
+
+Нейронная сеть дала среднеквадратичную ошибку в 4 раза больше, чем ARIMA, а точность предсказания вообще близка к нулю. Можно сделать вывод, что предсказание временных рядов требует более тонкой настройки архитектуры сетей.
 """
