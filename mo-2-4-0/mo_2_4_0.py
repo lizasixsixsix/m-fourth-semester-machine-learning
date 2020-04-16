@@ -50,7 +50,7 @@ Original file is located at
 
 Ознакомьтесь с имеющимися работами по данной тематике: англоязычная статья ( http://static.googleusercontent.com/media/research.google.com/en//pubs/archive/42241.pdf ), видео на _YouTube_ (https://www.youtube.com/watch?v=vGPI_JvLoN0).
 
-Используем архитектуру _LeNet-5_ и обучим сеть сначала на данных из набора MNIST.
+Используем архитектуру _LeNet-5_ и обучим сеть сначала на данных из набора _MNIST_.
 """
 
 ! pip install tensorflow-gpu --pre --quiet
@@ -64,15 +64,15 @@ import numpy as np
 
 from tensorflow.keras.datasets import mnist
 
-(x_train, y_train), (x_val, y_val) = mnist.load_data()
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
 
-x_train, x_val = tf.keras.utils.normalize(x_train, axis = 1), tf.keras.utils.normalize(x_val, axis = 1)
+x_train, x_test = tf.keras.utils.normalize(x_train, axis = 1), tf.keras.utils.normalize(x_test, axis = 1)
 
-x_train, x_val = x_train[..., np.newaxis], x_val[..., np.newaxis]
+x_train, x_test = x_train[..., np.newaxis], x_test[..., np.newaxis]
 
 from tensorflow.keras.utils import to_categorical
 
-y_train, y_val = to_categorical(y_train), to_categorical(y_val)
+y_train, y_test = to_categorical(y_train), to_categorical(y_test)
 
 y_train.shape
 
@@ -80,7 +80,7 @@ IMAGE_DIM_0, IMAGE_DIM_1 = x_train.shape[1], x_train.shape[2]
 
 CLASSES_N = y_train.shape[1]
 
-print(x_train.shape, x_val.shape)
+x_train.shape, x_test.shape
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import AveragePooling2D, Conv2D, Dense, Flatten
@@ -107,9 +107,13 @@ model.summary()
 
 EPOCHS_N = 20
 
-model.fit(x = x_train, y = y_train, validation_data = (x_val, y_val), epochs = EPOCHS_N)
+model.fit(x = x_train, y = y_train, validation_split = 0.15, epochs = EPOCHS_N)
 
-"""Удалось достичь отличного результата &mdash; точность распознавания на валидационной выборке составила 98,4%.
+results = model.evaluate(x_test, y_test)
+
+print('Test loss, test accuracy:', results)
+
+"""Удалось достичь отличного результата &mdash; точность распознавания на тестовой выборке составила 98,0%.
 
 ### Задание 2
 
@@ -209,13 +213,15 @@ model_2.compile(optimizer = 'adam',
 
 model_2.summary()
 
-model_2.fit(x = X_second_ds_train, y = y_second_ds_train_cat,
-            validation_data = (X_second_ds_test, y_second_ds_test_cat),
-            epochs = EPOCHS_N)
+model_2.fit(x = X_second_ds_train, y = y_second_ds_train_cat, validation_split = 0.15, epochs = EPOCHS_N)
+
+results = model_2.evaluate(X_second_ds_test, y_second_ds_test_cat)
+
+print('Test loss, test accuracy:', results)
 
 """Прежде всего, в модели изменилось то, что добавился ещё один класс &mdash; _не распознано_.
 
-Несмотря на то, что эти данные более сложны для распознавания, результат также неплох &mdash; точность распознавания на валидационной выборке составила 81,4%.
+Эти данные более сложны для распознавания, что повлияло на результат &mdash; точность распознавания на тестовой выборке составила 77,4%.
 
 ### Задание 3
 
