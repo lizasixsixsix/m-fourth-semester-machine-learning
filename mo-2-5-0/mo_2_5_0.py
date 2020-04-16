@@ -64,47 +64,61 @@ pyplot.show()
 NEW_IMAGE_WIDTH = 100
 
 from os import listdir
+from os.path import join
 from numpy import asarray
 from numpy import save
 from keras.preprocessing.image import load_img
 from keras.preprocessing.image import img_to_array
 
-folder = 'dogs-vs-cats/train/train/'
-photos, labels = list(), list()
+def dir_to_dataset(_dir_path):
+	
+	photos_, labels_ = [], []
 
-for file in listdir(folder):
+	for file_ in listdir(_dir_path):
 
-	output = 0.0
+		if file_.startswith('cat'):
+			label_ = 1.0
+		else:
+			label_ = 0.0
 
-	if file.startswith('cat'):
-		output = 1.0
+		photo_ = load_img(join(_dir_path, file_), target_size = (NEW_IMAGE_WIDTH, NEW_IMAGE_WIDTH))
 
-	photo = load_img(folder + file, target_size = (NEW_IMAGE_WIDTH, NEW_IMAGE_WIDTH))
+		photo_ = img_to_array(photo_)
 
-	photo = img_to_array(photo)
+		photos_.append(photo_)
+		labels_.append(label_)
+  
+	photos_norm_ = tf.keras.utils.normalize(photos_, axis = 1)
 
-	photos.append(photo)
-	labels.append(output)
-
-import numpy as np
-
-photos = asarray(photos)
-labels = asarray(labels)
-
-print(photos.shape, labels.shape)
-
-"""Разделение выборки будет применено автоматически как параметр `validation_split` метода `model.fit()`.
-
-### Задание 2
-
-Реализуйте глубокую нейронную сеть с как минимум тремя сверточными слоями. Какое качество классификации получено?
-"""
+	return asarray(photos_norm_), asarray(labels_)
 
 ! pip install tensorflow-gpu --pre --quiet
 
 ! pip show tensorflow-gpu
 
 import tensorflow as tf
+
+import numpy as np
+
+X_all, y_all = dir_to_dataset('dogs-vs-cats/train/train')
+
+TEST_LEN_HALF = 1000
+
+test_interval = np.r_[0:TEST_LEN_HALF, -TEST_LEN_HALF:-0]
+
+X, y = X_all[TEST_LEN_HALF:-TEST_LEN_HALF], y_all[TEST_LEN_HALF:-TEST_LEN_HALF]
+X_test, y_test = X_all[test_interval], y_all[test_interval]
+
+print(X.shape, y.shape)
+print(X_test.shape, y_test.shape)
+
+"""Выделение валидационной выборки произойдёт автоматически по параметру `validation_split` метода `model.fit()`.
+
+### Задание 2
+
+Реализуйте глубокую нейронную сеть с как минимум тремя сверточными слоями. Какое качество классификации получено?
+"""
+
 from tensorflow import keras
 
 from tensorflow.keras.models import Sequential
@@ -128,11 +142,13 @@ model.compile(optimizer = 'sgd',
 
 model.summary()
 
-photos_norm = tf.keras.utils.normalize(photos, axis = 1)
+model.fit(x = X, y = y, epochs = 20, validation_split = 0.15)
 
-model.fit(x = photos, y = labels, epochs = 20, validation_split = 0.15)
+results = model.evaluate(X_test, y_test)
 
-"""Результат получится плохой &mdash; сеть совсем не справилась с распознаванием.
+print('Test loss, test accuracy:', results)
+
+"""Результат &mdash; 72% на тестовой выборке.
 
 ### Задание 3
 
