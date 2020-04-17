@@ -34,6 +34,16 @@ LARGE_DS_URL = 'https://commondatastorage.googleapis.com/books1000/notMNIST_larg
 
 import matplotlib.pyplot as plt
 
+import seaborn as sns
+
+from matplotlib import rcParams
+
+rcParams['figure.figsize'] = 11.7, 8.27
+
+sns.set()
+
+sns.set_palette(sns.color_palette('hls'))
+
 from urllib.request import urlretrieve
 import tarfile
 import os
@@ -267,16 +277,6 @@ for size_ in sizes:
 
 print(scores)
 
-import seaborn as sns
-
-from matplotlib import rcParams
-
-rcParams['figure.figsize'] = 11.7, 8.27
-
-sns.set()
-
-sns.set_palette(sns.color_palette('hls'))
-
 sns.lineplot(sizes, [scores[s] for s in sizes])
 
 plt.xlabel('Samples $n$')
@@ -286,4 +286,4 @@ plt.title('Accuracy for Samples $n$')
 
 plt.show()
 
-"""На графике видим, что с увеличением выборки качество классификации растёт как логарифмическая функция от размера выборки."""
+"""На графике видим, что с увеличением выборки качество классификации растёт с размером выборки."""
