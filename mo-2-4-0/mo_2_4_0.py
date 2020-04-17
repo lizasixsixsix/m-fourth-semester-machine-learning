@@ -107,13 +107,44 @@ model.summary()
 
 EPOCHS_N = 20
 
-model.fit(x = x_train, y = y_train, validation_split = 0.15, epochs = EPOCHS_N)
+history = model.fit(x = x_train, y = y_train, validation_split = 0.15, epochs = EPOCHS_N)
+
+# Commented out IPython magic to ensure Python compatibility.
+# %matplotlib inline
+
+import matplotlib.pyplot as plt
+
+import seaborn as sns
+
+from matplotlib import rcParams
+
+rcParams['figure.figsize'] = 11.7, 8.27
+
+sns.set()
+
+sns.set_palette(sns.color_palette('hls'))
+
+plt.plot(history.history['categorical_accuracy'])
+plt.plot(history.history['val_categorical_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'right')
+plt.show()
+
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'right')
+plt.show()
 
 results = model.evaluate(x_test, y_test)
 
 print('Test loss, test accuracy:', results)
 
-"""Удалось достичь отличного результата &mdash; точность распознавания на тестовой выборке составила 98,0%.
+"""Удалось достичь отличного результата &mdash; точность распознавания на тестовой выборке составила 98%.
 
 ### Задание 2
 
@@ -178,7 +209,20 @@ print(X_second_ds_train.shape, y_second_ds_train.shape)
 print(X_second_ds_test.shape, y_second_ds_test.shape)
 print(X_second_ds_extra.shape, y_second_ds_extra.shape)
 
+# Commented out IPython magic to ensure Python compatibility.
+# %matplotlib inline
+
 import matplotlib.pyplot as plt
+
+import seaborn as sns
+
+from matplotlib import rcParams
+
+rcParams['figure.figsize'] = 11.7, 8.27
+
+sns.set()
+
+sns.set_palette(sns.color_palette('hls'))
 
 plt.imshow(X_second_ds_train[0])
 
@@ -209,7 +253,23 @@ model_2.compile(optimizer = 'adam',
 
 model_2.summary()
 
-model_2.fit(x = X_second_ds_train, y = y_second_ds_train_cat, validation_split = 0.15, epochs = EPOCHS_N)
+history_2 = model_2.fit(x = X_second_ds_train, y = y_second_ds_train_cat, validation_split = 0.15, epochs = EPOCHS_N)
+
+plt.plot(history_2.history['categorical_accuracy'])
+plt.plot(history_2.history['val_categorical_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'right')
+plt.show()
+
+plt.plot(history_2.history['loss'])
+plt.plot(history_2.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'right')
+plt.show()
 
 results = model_2.evaluate(X_second_ds_test, y_second_ds_test_cat)
 
@@ -217,9 +277,9 @@ print('Test loss, test accuracy:', results)
 
 """Прежде всего, в модели изменилось то, что добавился ещё один класс &mdash; _не распознано_.
 
-Эти данные более сложны для распознавания, что повлияло на результат &mdash; точность распознавания на тестовой выборке составила 77,4%.
+Эти данные более сложны для распознавания, что повлияло на результат &mdash; точность распознавания на тестовой выборке составила 83%.
 
-Теперь реализуем распознавание первого датасета &mdash; реальных изображений с несколькими цифрами и границами. Для этого потребуется реализация алгоритма _YOLO_.
+Загрузим первый датасет &mdash; реальные изображения с несколькими цифрами и рамками границ.
 """
 
 from imageio import imread
