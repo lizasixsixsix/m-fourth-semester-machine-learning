@@ -49,6 +49,8 @@ with ZipFile(os.path.join(BASE_DIR, TEST_ARCHIVE_NAME), 'r') as zip_:
 from matplotlib import pyplot
 from matplotlib.image import imread
 
+pyplot.rcParams["figure.figsize"] = (10, 10)
+
 dir_ = 'dogs-vs-cats/train/train'
 
 for i in range(9):
@@ -60,6 +62,8 @@ for i in range(9):
     pyplot.imshow(image_)
  
 pyplot.show()
+
+"""Изображения необходимо прирвести к одному размеру."""
 
 NEW_IMAGE_WIDTH = 100
 
@@ -112,6 +116,14 @@ X_test, y_test = X_all[test_interval], y_all[test_interval]
 print(X.shape, y.shape)
 print(X_test.shape, y_test.shape)
 
+for i in range(9):
+
+    pyplot.subplot(330 + 1 + i)
+
+    pyplot.imshow(X[i])
+ 
+pyplot.show()
+
 """Выделение валидационной выборки произойдёт автоматически по параметру `validation_split` метода `model.fit()`.
 
 ### Задание 2
@@ -148,11 +160,46 @@ results = model.evaluate(X_test, y_test)
 
 print('Test loss, test accuracy:', results)
 
-"""Результат &mdash; 72% на тестовой выборке.
+"""Результат &mdash; 75% на тестовой выборке.
 
 ### Задание 3
 
 Примените дополнение данных (_data augmentation_). Как это повлияло на качество классификатора?
+"""
+
+def augment_image(image):
+
+  image = tf.image.convert_image_dtype(image, tf.float32)
+  image = tf.image.resize_with_crop_or_pad(image, NEW_IMAGE_WIDTH + 40, NEW_IMAGE_WIDTH + 40)
+  image = tf.image.random_crop(image, size = [NEW_IMAGE_WIDTH, NEW_IMAGE_WIDTH, 3])
+
+  return image.numpy()
+
+X_augmented = np.zeros_like(X)
+
+for i, img in enumerate(X):
+
+    X_augmented[i] = augment_image(img)
+
+X_augmented.shape
+
+for i in range(9):
+
+    pyplot.subplot(330 + 1 + i)
+
+    pyplot.imshow(X_augmented[i])
+ 
+pyplot.show()
+
+y_augmented = y
+
+model.fit(x = X_augmented, y = y_augmented, epochs = 20, validation_split = 0.15)
+
+results_2 = model.evaluate(X_test, y_test)
+
+print('Test loss, test accuracy:', results_2)
+
+"""После того, как сеть обучилась на тех же данных, к которым был применён data augmentation, точность предсказания на тестовой выборке увеличилась ненамного &mdash; до 76%.
 
 ### Задание 4
 
