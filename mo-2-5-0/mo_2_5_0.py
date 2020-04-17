@@ -46,6 +46,21 @@ with ZipFile(os.path.join(BASE_DIR, TRAIN_ARCHIVE_NAME), 'r') as zip_:
 with ZipFile(os.path.join(BASE_DIR, TEST_ARCHIVE_NAME), 'r') as zip_:
     zip_.extractall(path = os.path.join(LOCAL_DIR_NAME, 'test-1'))
 
+# Commented out IPython magic to ensure Python compatibility.
+# %matplotlib inline
+
+import matplotlib.pyplot as plt
+
+import seaborn as sns
+
+from matplotlib import rcParams
+
+rcParams['figure.figsize'] = 11.7, 8.27
+
+sns.set()
+
+sns.set_palette(sns.color_palette('hls'))
+
 from matplotlib import pyplot
 from matplotlib.image import imread
 
@@ -154,13 +169,29 @@ model.compile(optimizer = 'sgd',
 
 model.summary()
 
-model.fit(x = X, y = y, epochs = 20, validation_split = 0.15)
+history = model.fit(x = X, y = y, epochs = 20, validation_split = 0.15)
+
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'upper left')
+plt.show()
+
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'upper left')
+plt.show()
 
 results = model.evaluate(X_test, y_test)
 
 print('Test loss, test accuracy:', results)
 
-"""Результат &mdash; 75% на тестовой выборке.
+"""Результат &mdash; 76% на тестовой выборке.
 
 ### Задание 3
 
@@ -193,13 +224,29 @@ pyplot.show()
 
 y_augmented = y
 
-model.fit(x = X_augmented, y = y_augmented, epochs = 20, validation_split = 0.15)
+history_2 = model.fit(x = X_augmented, y = y_augmented, epochs = 20, validation_split = 0.15)
+
+plt.plot(history_2.history['accuracy'])
+plt.plot(history_2.history['val_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'upper left')
+plt.show()
+
+plt.plot(history_2.history['loss'])
+plt.plot(history_2.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'upper left')
+plt.show()
 
 results_2 = model.evaluate(X_test, y_test)
 
 print('Test loss, test accuracy:', results_2)
 
-"""После того, как сеть обучилась на тех же данных, к которым был применён data augmentation, точность предсказания на тестовой выборке увеличилась ненамного &mdash; до 76%.
+"""После того, как сеть обучилась на тех же данных, к которым был применён data augmentation, точность предсказания даже немного уменьшилась &mdash; до 75%.
 
 ### Задание 4
 
