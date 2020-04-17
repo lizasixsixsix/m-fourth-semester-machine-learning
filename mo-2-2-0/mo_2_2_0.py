@@ -112,7 +112,40 @@ VAL_SPLIT_RATE = 0.1
 
 EPOCHS_N = 10
 
-model.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
+history = model.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
+
+# Commented out IPython magic to ensure Python compatibility.
+# %matplotlib inline
+
+import matplotlib.pyplot as plt
+
+import seaborn as sns
+
+from matplotlib import rcParams
+
+rcParams['figure.figsize'] = 11.7, 8.27
+
+sns.set()
+
+sns.set_palette(sns.color_palette('hls'))
+
+import matplotlib.pyplot as plt
+
+plt.plot(history.history['categorical_accuracy'])
+plt.plot(history.history['val_categorical_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'right')
+plt.show()
+
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'right')
+plt.show()
 
 results = model.evaluate(x_test, y_test)
 
@@ -162,13 +195,29 @@ model_2.compile(optimizer = 'sgd',
 
 model_2.summary()
 
-model_2.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
+history_2 = model_2.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
+
+plt.plot(history_2.history['categorical_accuracy'])
+plt.plot(history_2.history['val_categorical_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'right')
+plt.show()
+
+plt.plot(history_2.history['loss'])
+plt.plot(history_2.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'right')
+plt.show()
 
 results_2 = model_2.evaluate(x_test, y_test)
 
 print('Test loss, test accuracy:', results_2)
 
-"""Регуляризация и сброс нейронов значительно помогли &mdash; модель показывает 72% точности на тестовой выборке!
+"""Регуляризация и сброс нейронов значительно помогли &mdash; модель показывает 62% точности на тестовой выборке.
 
 ### Задание 4
 
@@ -183,13 +232,29 @@ model_2.compile(optimizer = dyn_lr_sgd,
                 loss = cat_cross_from_logits,
                 metrics = ['categorical_accuracy'])
 
-model_2.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
+history_3 = model_2.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
+
+plt.plot(history_3.history['categorical_accuracy'])
+plt.plot(history_3.history['val_categorical_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'right')
+plt.show()
+
+plt.plot(history_3.history['loss'])
+plt.plot(history_3.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'right')
+plt.show()
 
 results_3 = model_2.evaluate(x_test, y_test)
 
 print('Test loss, test accuracy:', results_3)
 
-"""Динамически изменяемая скорость обучения не улучшила результат &mdash; 72% на тестовой выборке.
+"""Динамически изменяемая скорость обучения улучшила результат &mdash; 72% на тестовой выборке.
 
 Можно сделать вывод, что модель с полносвязными слоями может использоваться для решения задачи распознавания изображений, однако она очевидно не является наилучшей.
 """
