@@ -123,13 +123,44 @@ model.compile(optimizer = 'adam',
 
 model.summary()
 
-model.fit(x = X_train, y = y_train, epochs = 20, validation_split = 0.15)
+history = model.fit(x = X_train, y = y_train, epochs = 20, validation_split = 0.15)
+
+# Commented out IPython magic to ensure Python compatibility.
+# %matplotlib inline
+
+import matplotlib.pyplot as plt
+
+import seaborn as sns
+
+from matplotlib import rcParams
+
+rcParams['figure.figsize'] = 11.7, 8.27
+
+sns.set()
+
+sns.set_palette(sns.color_palette('hls'))
+
+plt.plot(history.history['categorical_accuracy'])
+plt.plot(history.history['val_categorical_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'upper left')
+plt.show()
+
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'upper left')
+plt.show()
 
 results = model.evaluate(X_test, y_test)
 
 print('Test loss, test accuracy:', results)
 
-"""За 20 эпох удалось достичь точности 82% на тестовой выборке.
+"""За 20 эпох удалось достичь точности 84% на тестовой выборке.
 
 ### Задание 3
 
@@ -154,7 +185,23 @@ X_train_augmented.shape
 
 y_train_augmented = y_train
 
-model.fit(x = X_train_augmented, y = y_train_augmented, epochs = 20, validation_split = 0.15)
+history_2 = model.fit(x = X_train_augmented, y = y_train_augmented, epochs = 20, validation_split = 0.15)
+
+plt.plot(history_2.history['categorical_accuracy'])
+plt.plot(history_2.history['val_categorical_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'upper left')
+plt.show()
+
+plt.plot(history_2.history['loss'])
+plt.plot(history_2.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'upper left')
+plt.show()
 
 results_2 = model.evaluate(X_test, y_test)
 
