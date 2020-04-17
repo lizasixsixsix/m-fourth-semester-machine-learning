@@ -87,11 +87,13 @@ test_df_reshaped = to_images_and_labels(test_df)
 
 ! pip show tensorflow-gpu
 
+import tensorflow as tf
+
 from tensorflow.keras.utils import to_categorical
 import numpy as np
 
-X_train = np.asarray(list(train_df_reshaped['image']))
-X_test = np.asarray(list(test_df_reshaped['image']))
+X_train = tf.keras.utils.normalize(np.asarray(list(train_df_reshaped['image'])), axis = 1)
+X_test = tf.keras.utils.normalize(np.asarray(list(test_df_reshaped['image'])), axis = 1)
 
 y_train = to_categorical(train_df_reshaped['label'].astype('category').cat.codes.astype('int32'))
 y_test = to_categorical(test_df_reshaped['label'].astype('category').cat.codes.astype('int32'))
@@ -99,8 +101,6 @@ y_test = to_categorical(test_df_reshaped['label'].astype('category').cat.codes.a
 X_train.shape, y_train.shape, X_test.shape, y_test.shape
 
 CLASSES_N = y_train.shape[1]
-
-import tensorflow as tf
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import AveragePooling2D, Conv2D, Dense, Flatten
@@ -121,17 +121,46 @@ model.compile(optimizer = 'adam',
               loss = 'categorical_crossentropy',
               metrics = ['categorical_accuracy'])
 
+model.summary()
+
 model.fit(x = X_train, y = y_train, epochs = 20, validation_split = 0.15)
 
 results = model.evaluate(X_test, y_test)
 
 print('Test loss, test accuracy:', results)
 
-"""За 20 эпох удалось достичь точности в 87% на тестовой выборке.
+"""За 20 эпох удалось достичь точности 82% на тестовой выборке.
 
 ### Задание 3
 
 Примените дополнение данных (_data augmentation_). Как это повлияло на качество классификатора?
+"""
+
+def augment_image(image):
+
+  image = tf.image.convert_image_dtype(image, tf.float32)
+  image = tf.image.resize_with_crop_or_pad(image, IMAGE_DIM + 6, IMAGE_DIM + 6)
+  image = tf.image.random_crop(image, size = [IMAGE_DIM, IMAGE_DIM, 1])
+
+  return image.numpy()
+
+X_train_augmented = np.zeros_like(X_train)
+
+for i, img in enumerate(X_train):
+
+    X_train_augmented[i] = augment_image(img)
+
+X_train_augmented.shape
+
+y_train_augmented = y_train
+
+model.fit(x = X_train_augmented, y = y_train_augmented, epochs = 20, validation_split = 0.15)
+
+results_2 = model.evaluate(X_test, y_test)
+
+print('Test loss, test accuracy:', results_2)
+
+"""После того, как сеть обучилась на тех же данных, к которым был применён _data augmentation_, точность предсказания на тестовой выборке увеличилась до 91%.
 
 ### Задание 4
 
