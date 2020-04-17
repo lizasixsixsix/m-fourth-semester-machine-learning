@@ -195,13 +195,44 @@ X_test_intized = np.asarray(list(df_test_intized['ints'].values), dtype = float)
 y_train_intized = np.asarray(list(df_train_intized['label'].values))
 y_test_intized = np.asarray(list(df_test_intized['label'].values))
 
-model.fit(x = X_train_intized, y = y_train_intized, validation_split = 0.15, epochs = 20)
+history = model.fit(x = X_train_intized, y = y_train_intized, validation_split = 0.15, epochs = 20)
+
+# Commented out IPython magic to ensure Python compatibility.
+# %matplotlib inline
+
+import matplotlib.pyplot as plt
+
+import seaborn as sns
+
+from matplotlib import rcParams
+
+rcParams['figure.figsize'] = 11.7, 8.27
+
+sns.set()
+
+sns.set_palette(sns.color_palette('hls'))
+
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'upper left')
+plt.show()
+
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'upper left')
+plt.show()
 
 results = model.evaluate(X_test_intized, y_test_intized)
 
 print('Test loss, test accuracy:', results)
 
-"""На валидационной выборке удалось достичь точности 57%.
+"""На валидационной выборке удалось достичь точности 56%.
 
 ### Задание 3
 
@@ -289,7 +320,23 @@ model_2.compile(optimizer = 'adam',
 
 model_2.summary()
 
-model_2.fit(x = X_train_vectorized, y = y_train_vectorized, validation_split = 0.15, epochs = 20)
+history_2 = model_2.fit(x = X_train_vectorized, y = y_train_vectorized, validation_split = 0.15, epochs = 20)
+
+plt.plot(history_2.history['accuracy'])
+plt.plot(history_2.history['val_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'upper left')
+plt.show()
+
+plt.plot(history_2.history['loss'])
+plt.plot(history_2.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'upper left')
+plt.show()
 
 results_2 = model_2.evaluate(X_test_vectorized, y_test_vectorized)
 
@@ -316,13 +363,29 @@ model_3.compile(optimizer = 'adam',
 
 model_3.summary()
 
-model_3.fit(x = X_train_vectorized, y = y_train_vectorized, validation_split = 0.15, epochs = 20)
+history_3 = model_3.fit(x = X_train_vectorized, y = y_train_vectorized, validation_split = 0.15, epochs = 20)
+
+plt.plot(history_3.history['accuracy'])
+plt.plot(history_3.history['val_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'upper left')
+plt.show()
+
+plt.plot(history_3.history['loss'])
+plt.plot(history_3.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'upper left')
+plt.show()
 
 results_3 = model_3.evaluate(X_test_vectorized, y_test_vectorized)
 
 print('Test loss, test accuracy:', results_3)
 
-"""Добавление ещё одного рекуррентного слоя ненамного улучшило результат &mdash; точность 76% на тестовой выборке.
+"""Добавление ещё одного рекуррентного слоя ненамного улучшило результат &mdash; точность 75% на тестовой выборке.
 
 ### Задание 5
 
