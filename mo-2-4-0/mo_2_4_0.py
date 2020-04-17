@@ -156,10 +156,6 @@ def tar_gz_to_dir(_url_folder, _name, _ext, _key):
 
     return dir_name_
 
-first_ds_train_dir = tar_gz_to_dir(DS_URL_FOLDER, TRAIN_DS_NAME, FIRST_DS_EXT, 'first')
-first_ds_test_dir = tar_gz_to_dir(DS_URL_FOLDER, TEST_DS_NAME, FIRST_DS_EXT, 'first')
-first_ds_extra_dir = tar_gz_to_dir(DS_URL_FOLDER, EXTRA_DS_NAME, FIRST_DS_EXT, 'first')
-
 second_ds_train_file = load_file(DS_URL_FOLDER, TRAIN_DS_NAME, SECOND_DS_EXT, 'second')
 second_ds_test_file = load_file(DS_URL_FOLDER, TEST_DS_NAME, SECOND_DS_EXT, 'second')
 second_ds_extra_file = load_file(DS_URL_FOLDER, EXTRA_DS_NAME, SECOND_DS_EXT, 'second')
@@ -184,9 +180,9 @@ print(X_second_ds_extra.shape, y_second_ds_extra.shape)
 
 import matplotlib.pyplot as plt
 
-plt.imshow(X_second_ds_train[100])
-plt.imshow(X_second_ds_test[100])
-plt.imshow(X_second_ds_extra[100])
+plt.imshow(X_second_ds_train[0])
+
+plt.show()
 
 IMAGE_DIM_0_2, IMAGE_DIM_1_2, IMAGE_DIM_2_2 = X_second_ds_train.shape[-3], X_second_ds_train.shape[-2], X_second_ds_train.shape[-1]
 
@@ -223,7 +219,98 @@ print('Test loss, test accuracy:', results)
 
 Эти данные более сложны для распознавания, что повлияло на результат &mdash; точность распознавания на тестовой выборке составила 77,4%.
 
-### Задание 3
+Теперь реализуем распознавание первого датасета &mdash; реальных изображений с несколькими цифрами и границами. Для этого потребуется реализация алгоритма _YOLO_.
+"""
+
+from imageio import imread
+import pandas as pd
+
+def image_to_array(_image):  
+    try:
+        array_ = imread(_image)
+
+        return True, array_
+    except:
+        return False, None
+
+def dir_to_dataframe(_dir_path):
+
+    data_ = []
+
+    files_ = sorted(os.listdir(_dir_path))
+
+    for f in files_:
+        file_path_ = os.path.join(_dir_path, f)
+        
+        can_read_, im = image_to_array(file_path_)
+
+        if can_read_:
+            data_.append(im)
+
+    dataframe_ = pd.DataFrame()
+
+    dataframe_['data'] = np.array(data_)
+
+    return dataframe_
+
+first_ds_train_dir = tar_gz_to_dir(DS_URL_FOLDER, TRAIN_DS_NAME, FIRST_DS_EXT, 'first')
+first_ds_test_dir = tar_gz_to_dir(DS_URL_FOLDER, TEST_DS_NAME, FIRST_DS_EXT, 'first')
+
+first_ds_train_subdir = os.path.join(first_ds_train_dir, 'train')
+first_ds_test_subdir = os.path.join(first_ds_test_dir, 'test')
+
+first_ds_train_images_df = dir_to_dataframe(first_ds_train_subdir)
+first_ds_test_images_df = dir_to_dataframe(first_ds_test_subdir)
+
+import h5py
+
+first_ds_train_boxes_mat = h5py.File(os.path.join(first_ds_train_subdir, 'digitStruct.mat'), 'r')
+first_ds_test_boxes_mat = h5py.File(os.path.join(first_ds_test_subdir, 'digitStruct.mat'), 'r')
+
+import numpy as np
+import pickle
+import h5py
+
+def mat_to_pickle(_mat_path, _key):
+
+    f = h5py.File(_mat_path, 'r')
+
+    metadata = {}
+
+    metadata['height'] = []
+    metadata['label'] = []
+    metadata['left'] = []
+    metadata['top'] = []
+    metadata['width'] = []
+
+    def print_attrs(name, obj):
+        vals = []
+        if obj.shape[0] == 1:
+            vals.append(int(obj[0][0]))
+        else:
+            for k in range(obj.shape[0]):
+                vals.append(int(f[obj[k][0]][0][0]))
+        metadata[name].append(vals)
+
+    for item in f['/digitStruct/bbox']:
+        f[item[0]].visititems(print_attrs)
+
+    with open('{}.pickle'.format((_key)),'wb') as pf:
+        pickle.dump(metadata, pf, pickle.HIGHEST_PROTOCOL)
+
+mat_to_pickle(os.path.join(first_ds_train_subdir, 'digitStruct.mat'), 'train_bbox')
+mat_to_pickle(os.path.join(first_ds_test_subdir, 'digitStruct.mat'), 'test_bbox')
+
+train_bbox_data = np.load('train_bbox.pickle', allow_pickle = True)
+test_bbox_data = np.load('test_bbox.pickle', allow_pickle = True)
+
+plt.imshow(first_ds_train_images_df['data'][0])
+
+plt.show()
+
+train_bbox_data['label'][0]
+
+"""### Задание 3
 
 Сделайте множество снимков изображений номеров домов с помощью смартфона на ОС _Android_. Также можно использовать библиотеки _OpenCV_, _Simple CV_ или _Pygame_ для обработки изображений с общедоступных камер видеонаблюдения (например, https://www.earthcam.com/).
 
