@@ -186,7 +186,23 @@ model.compile(optimizer = 'adam',
 
 model.summary()
 
-model.fit(x = X, y = y, validation_split = 0.15, epochs = 20, verbose = 0)
+history = model.fit(x = X, y = y, validation_split = 0.15, epochs = 20, verbose = 0)
+
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'upper left')
+plt.show()
+
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'upper left')
+plt.show()
 
 results = model.evaluate(X_test, y_test)
 
@@ -198,5 +214,5 @@ print('Test mse, test accuracy:', results)
 
 Какой максимальный результат удалось получить на контрольной выборке?
 
-Нейронная сеть дала среднеквадратичную ошибку в 4 раза больше, чем ARIMA, а точность предсказания вообще близка к нулю. Можно сделать вывод, что предсказание временных рядов требует более тонкой настройки архитектуры сетей.
+Нейронная сеть дала среднеквадратичную ошибку в 4 раза больше, чем ARIMA, а точность предсказания вообще равна нулю. Можно сделать вывод, что предсказание временных рядов требует более тонкой настройки архитектуры сетей.
 """
