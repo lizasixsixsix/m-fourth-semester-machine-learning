@@ -72,9 +72,24 @@ x_test = tf.keras.utils.normalize(x_test, axis = 1)
 
 x_test.shape
 
+# Commented out IPython magic to ensure Python compatibility.
+# %matplotlib inline
+
 import matplotlib.pyplot as plt
 
+import seaborn as sns
+
+from matplotlib import rcParams
+
+rcParams['figure.figsize'] = 11.7, 8.27
+
+sns.set()
+
+sns.set_palette(sns.color_palette('hls'))
+
 plt.imshow(x[100].squeeze())
+
+plt.show()
 
 IMAGE_DIM_0, IMAGE_DIM_1 = x.shape[1], x.shape[2]
 
@@ -116,13 +131,29 @@ VAL_SPLIT_RATE = 0.1
 
 EPOCHS_N = 10
 
-model.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
+history = model.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
+
+plt.plot(history.history['categorical_accuracy'])
+plt.plot(history.history['val_categorical_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'right')
+plt.show()
+
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'right')
+plt.show()
 
 results = model.evaluate(x_test, y_test)
 
 print('Test loss, test accuracy:', results)
 
-"""Лучшая точность построенной модели на тестовой выборке составила 88%.
+"""Лучшая точность построенной модели на тестовой выборке составила 89%.
 
 ### Задание 2
 
@@ -145,7 +176,23 @@ model_2.compile(optimizer = 'sgd',
 
 model_2.summary()
 
-model_2.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
+history_2 = model_2.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
+
+plt.plot(history_2.history['categorical_accuracy'])
+plt.plot(history_2.history['val_categorical_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'right')
+plt.show()
+
+plt.plot(history_2.history['loss'])
+plt.plot(history_2.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'right')
+plt.show()
 
 results_2 = model_2.evaluate(x_test, y_test)
 
@@ -176,13 +223,29 @@ model_3.compile(optimizer = 'adam',
                 loss = 'categorical_crossentropy',
                 metrics = ['categorical_accuracy'])
 
-model_3.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
+history_3 = model_3.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
+
+plt.plot(history_3.history['categorical_accuracy'])
+plt.plot(history_3.history['val_categorical_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'right')
+plt.show()
+
+plt.plot(history_3.history['loss'])
+plt.plot(history_3.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc = 'right')
+plt.show()
 
 results_3 = model_3.evaluate(x_test, y_test)
 
 print('Test loss, test accuracy:', results_3)
 
-"""Удивительно, но _LeNet-5_ показала результат хуже, чем первая модель &mdash; 87% на тестовой выборке. Объяснить это можно тем, что первая модель содержит свёрточный слой с большей выходной размерностью.
+"""Удивительно, но _LeNet-5_ показала результат хуже, чем первая и вторая модель &mdash; 85% на тестовой выборке. Объяснить это можно тем, что первая модель содержит свёрточный слой с большей выходной размерностью.
 
 ### Задание 4
 
@@ -194,15 +257,15 @@ print('Test loss, test accuracy:', results_3)
 
 * модель с только полносвязными слоями &mdash; 10%;
 
-    * с регуляризацией и сбросом нейронов &mdash; 72%;
+    * с регуляризацией и сбросом нейронов &mdash; 62%;
 
-        * с адапливны шагом &mdash; 72%;
+        * с адаптивным шагом &mdash; 72%;
 
-* модель с двумя свёрточными слоями и одним полносвязным &mdash; 88%;
+* модель с двумя свёрточными слоями и одним полносвязным &mdash; 89%;
 
 * модель с одним свёрточным слоем, операцией пулинга и одним полносвязным &mdash; 87%;
 
-* _LeNet-5_ &mdash; два свёрточных слоя две операции пулинга два полносвязных слоя &mdash; 87%.
+* _LeNet-5_ &mdash; два свёрточных слоя, две операции пулинга, два полносвязных слоя &mdash; 85%.
 
 Объяснение превосходства свёрточных сетей над полносвязными &mdash; такая архитектура просто предназначена для работы с изображениями.
 """
