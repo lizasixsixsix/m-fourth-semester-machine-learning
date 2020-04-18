@@ -208,7 +208,7 @@ results = model.evaluate(X_test, y_test)
 
 print('Test loss, test accuracy:', results)
 
-"""Результат &mdash; 76% на тестовой выборке.
+"""Результат &mdash; 69% на тестовой выборке.
 
 ### Задание 3
 
@@ -255,7 +255,7 @@ results_2 = model.evaluate(X_test, y_test)
 
 print('Test loss, test accuracy:', results_2)
 
-"""После того, как сеть обучилась на тех же данных, к которым был применён data augmentation, точность предсказания даже немного уменьшилась &mdash; до 75%.
+"""После того, как сеть обучилась на тех же данных, к которым был применён data augmentation, точность предсказания увеличилась &mdash; до 75%.
 
 ### Задание 4
 
