@@ -21,6 +21,10 @@ Original file is located at
 Загрузите данные. Разделите исходный набор данных на обучающую, валидационную и контрольную выборки.
 """
 
+import warnings
+
+warnings.filterwarnings('ignore')
+
 from google.colab import drive
 
 drive.mount('/content/drive', force_remount = True)
@@ -50,33 +54,57 @@ with ZipFile(os.path.join(BASE_DIR, TEST_ARCHIVE_NAME), 'r') as zip_:
 # %matplotlib inline
 
 import matplotlib.pyplot as plt
-
 import seaborn as sns
-
 from matplotlib import rcParams
 
-rcParams['figure.figsize'] = 11.7, 8.27
+rcParams['figure.figsize'] = 8, 6
 
 sns.set()
-
 sns.set_palette(sns.color_palette('hls'))
 
-from matplotlib import pyplot
-from matplotlib.image import imread
+def plot_accuracy(_history,
+                  _train_acc_name = 'accuracy',
+                  _val_acc_name = 'val_accuracy'):
 
-pyplot.rcParams["figure.figsize"] = (10, 10)
+    plt.plot(_history.history[_train_acc_name])
+    plt.plot(_history.history[_val_acc_name])
+
+    plt.title('Model accuracy')
+
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+
+    plt.legend(['Train', 'Validation'], loc = 'right')
+
+    plt.show()
+
+def plot_loss(_history):
+
+    plt.plot(_history.history['loss'])
+    plt.plot(_history.history['val_loss'])
+
+    plt.title('Model loss')
+
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+
+    plt.legend(['Train', 'Validation'], loc = 'right')
+
+    plt.show()
+
+from matplotlib.image import imread
 
 dir_ = 'dogs-vs-cats/train/train'
 
 for i in range(9):
 
-    pyplot.subplot(330 + 1 + i)
+    plt.subplot(330 + 1 + i)
 
     image_ = imread('{}/cat.{}.jpg'.format(dir_, i))
 
-    pyplot.imshow(image_)
+    plt.imshow(image_)
  
-pyplot.show()
+plt.show()
 
 """Изображения необходимо прирвести к одному размеру."""
 
@@ -100,7 +128,8 @@ def dir_to_dataset(_dir_path):
 		else:
 			label_ = 0.0
 
-		photo_ = load_img(join(_dir_path, file_), target_size = (NEW_IMAGE_WIDTH, NEW_IMAGE_WIDTH))
+		photo_ = load_img(join(_dir_path, file_),
+		                  target_size = (NEW_IMAGE_WIDTH, NEW_IMAGE_WIDTH))
 
 		photo_ = img_to_array(photo_)
 
@@ -112,8 +141,6 @@ def dir_to_dataset(_dir_path):
 	return asarray(photos_norm_), asarray(labels_)
 
 ! pip install tensorflow-gpu --pre --quiet
-
-! pip show tensorflow-gpu
 
 import tensorflow as tf
 
@@ -133,11 +160,11 @@ print(X_test.shape, y_test.shape)
 
 for i in range(9):
 
-    pyplot.subplot(330 + 1 + i)
+    plt.subplot(330 + 1 + i)
 
-    pyplot.imshow(X[i])
+    plt.imshow(X[i])
  
-pyplot.show()
+plt.show()
 
 """Выделение валидационной выборки произойдёт автоматически по параметру `validation_split` метода `model.fit()`.
 
@@ -153,7 +180,8 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 
 model = tf.keras.Sequential()
 
-model.add(Conv2D(16, 3, padding = 'same', activation = 'relu', input_shape = (NEW_IMAGE_WIDTH, NEW_IMAGE_WIDTH, 3)))
+model.add(Conv2D(16, 3, padding = 'same', activation = 'relu',
+                 input_shape = (NEW_IMAGE_WIDTH, NEW_IMAGE_WIDTH, 3)))
 model.add(MaxPooling2D())
 model.add(Conv2D(32, 3, padding = 'same', activation = 'relu'))
 model.add(MaxPooling2D())
@@ -169,23 +197,12 @@ model.compile(optimizer = 'sgd',
 
 model.summary()
 
-history = model.fit(x = X, y = y, epochs = 20, validation_split = 0.15)
+history = model.fit(x = X, y = y, epochs = 20,
+                    validation_split = 0.15, verbose = 0)
 
-plt.plot(history.history['accuracy'])
-plt.plot(history.history['val_accuracy'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'upper left')
-plt.show()
+plot_accuracy(history)
 
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'upper left')
-plt.show()
+plot_loss(history)
 
 results = model.evaluate(X_test, y_test)
 
@@ -201,8 +218,11 @@ print('Test loss, test accuracy:', results)
 def augment_image(image):
 
   image = tf.image.convert_image_dtype(image, tf.float32)
-  image = tf.image.resize_with_crop_or_pad(image, NEW_IMAGE_WIDTH + 40, NEW_IMAGE_WIDTH + 40)
-  image = tf.image.random_crop(image, size = [NEW_IMAGE_WIDTH, NEW_IMAGE_WIDTH, 3])
+  image = tf.image.resize_with_crop_or_pad(image,
+                                           NEW_IMAGE_WIDTH + 40,
+                                           NEW_IMAGE_WIDTH + 40)
+  image = tf.image.random_crop(image,
+                               size = [NEW_IMAGE_WIDTH, NEW_IMAGE_WIDTH, 3])
 
   return image.numpy()
 
@@ -216,31 +236,20 @@ X_augmented.shape
 
 for i in range(9):
 
-    pyplot.subplot(330 + 1 + i)
+    plt.subplot(330 + 1 + i)
 
-    pyplot.imshow(X_augmented[i])
+    plt.imshow(X_augmented[i])
  
-pyplot.show()
+plt.show()
 
 y_augmented = y
 
-history_2 = model.fit(x = X_augmented, y = y_augmented, epochs = 20, validation_split = 0.15)
+history_2 = model.fit(x = X_augmented, y = y_augmented, epochs = 20,
+                      validation_split = 0.15, verbose = 0)
 
-plt.plot(history_2.history['accuracy'])
-plt.plot(history_2.history['val_accuracy'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'upper left')
-plt.show()
+plot_accuracy(history_2)
 
-plt.plot(history_2.history['loss'])
-plt.plot(history_2.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'upper left')
-plt.show()
+plot_loss(history_2)
 
 results_2 = model.evaluate(X_test, y_test)
 
