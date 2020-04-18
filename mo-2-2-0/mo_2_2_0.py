@@ -78,11 +78,13 @@ IMAGE_DIM_0, IMAGE_DIM_1 = x.shape[1], x.shape[2]
 
 from tensorflow.keras.utils import to_categorical
 
-y = to_categorical(dataframe['label'].astype('category').cat.codes.astype('int32'))
+y = (to_categorical(dataframe['label']
+                    .astype('category').cat.codes.astype('int32')))
 
 y.shape
 
-y_test = to_categorical(dataframe_test['label'].astype('category').cat.codes.astype('int32'))
+y_test = (to_categorical(dataframe_test['label']
+                         .astype('category').cat.codes.astype('int32')))
 
 y_test.shape
 
@@ -128,13 +130,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib import rcParams
 
-rcParams['figure.figsize'] = 11.7, 8.27
+rcParams['figure.figsize'] = 8, 6
 
 sns.set()
 sns.set_palette(sns.color_palette('hls'))
 
 def plot_accuracy(_history,
-                 _train_acc_name = 'accuracy', _val_acc_name = 'val_accuracy'):
+                  _train_acc_name = 'accuracy',
+                  _val_acc_name = 'val_accuracy'):
 
     plt.plot(_history.history[_train_acc_name])
     plt.plot(_history.history[_val_acc_name])
@@ -231,7 +234,7 @@ results_2 = model_2.evaluate(x_test, y_test)
 
 print('Test loss, test accuracy:', results_2)
 
-"""Регуляризация и сброс нейронов значительно помогли &mdash; модель показывает 61% точности на тестовой выборке.
+"""Регуляризация и сброс нейронов значительно помогли &mdash; модель показывает 63% точности на тестовой выборке.
 
 ### Задание 4
 
@@ -257,7 +260,7 @@ results_3 = model_2.evaluate(x_test, y_test)
 
 print('Test loss, test accuracy:', results_3)
 
-"""Динамически изменяемая скорость обучения улучшила результат &mdash; 68% на тестовой выборке.
+"""Динамически изменяемая скорость обучения совсем немного улучшила результат &mdash; 64% на тестовой выборке.
 
 Можно сделать вывод, что модель с полносвязными слоями может использоваться для решения задачи распознавания изображений, однако она очевидно не является наилучшей.
 """
