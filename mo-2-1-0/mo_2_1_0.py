@@ -30,8 +30,10 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-SMALL_DS_URL = 'https://commondatastorage.googleapis.com/books1000/notMNIST_small.tar.gz'
-LARGE_DS_URL = 'https://commondatastorage.googleapis.com/books1000/notMNIST_large.tar.gz'
+SMALL_DS_URL = (
+    'https://commondatastorage.googleapis.com/books1000/notMNIST_small.tar.gz')
+LARGE_DS_URL = (
+    'https://commondatastorage.googleapis.com/books1000/notMNIST_large.tar.gz')
 
 # Commented out IPython magic to ensure Python compatibility.
 # %matplotlib inline
@@ -40,7 +42,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib import rcParams
 
-rcParams['figure.figsize'] = 11.7, 8.27
+rcParams['figure.figsize'] = 8, 6
 
 sns.set()
 sns.set_palette(sns.color_palette('hls'))
@@ -76,7 +78,7 @@ import numpy as np
 
 def print_examples(_examples):
 
-    fig = plt.figure(figsize = (16, 6))
+    fig = plt.figure(figsize = (8, 4))
 
     height_ = 2
     width_ = ceil(_examples.count() / height_)
@@ -106,7 +108,9 @@ def get_inner_dir(_dir_path):
 
 def remove_duplicates(_dataframe, _data_column_name):
 
-   return _dataframe.loc[_dataframe[_data_column_name].astype(str).drop_duplicates().index]
+   return (_dataframe
+           .loc[_dataframe[_data_column_name]
+                .astype(str).drop_duplicates().index])
 
 def dir_to_dataframe(_dir_path):
 
@@ -172,7 +176,8 @@ large_dataframe = tar_to_dataframe(LARGE_DS_URL, 'large')
 
 def print_balance(_dataframe, _label_column_name):
     
-    values_ = _dataframe[_label_column_name].value_counts().sort_values(ascending = False)
+    values_ = (_dataframe[_label_column_name]
+               .value_counts().sort_values(ascending = False))
 
     print(('{:>10}' * len(values_)).format(*values_))
 
@@ -200,7 +205,8 @@ def split(_dataframe, _n_train, _n_test, _n_val):
     to_be_split_ = to_be_split_.drop(train_.index)
     test_ = to_be_split_.sample(n = _n_test, random_state = seed_)
     
-    val_ = to_be_split_.drop(test_.index).sample(n = _n_val, random_state = seed_)
+    val_ = (to_be_split_
+            .drop(test_.index).sample(n = _n_val, random_state = seed_))
 
     return train_, test_, val_
 
@@ -223,7 +229,8 @@ def no_duplicates(_dataframe, _data_column_name):
 
     original_length_ = _dataframe.shape[0]
 
-    unique_length_ = _dataframe[_data_column_name].astype(str).unique().shape[0]
+    unique_length_ = (_dataframe[_data_column_name]
+                      .astype(str).unique().shape[0])
 
     print(str(original_length_) + ' -- ' + str(unique_length_))
 
@@ -264,7 +271,8 @@ from sklearn.linear_model import LogisticRegression
 
 for size_ in sizes:
 
-    clf_ = LogisticRegression(max_iter = 100).fit(X_train[:size_], y_train[:size_])
+    clf_ = (LogisticRegression(max_iter = 100)
+            .fit(X_train[:size_], y_train[:size_]))
 
     clfs[size_] = clf_
 
