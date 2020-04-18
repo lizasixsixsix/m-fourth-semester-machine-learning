@@ -53,9 +53,11 @@ Original file is located at
 Используем архитектуру _LeNet-5_ и обучим сеть сначала на данных из набора _MNIST_.
 """
 
-! pip install tensorflow-gpu --pre --quiet
+import warnings
 
-! pip show tensorflow-gpu
+warnings.filterwarnings('ignore')
+
+! pip install tensorflow-gpu --pre --quiet
 
 import tensorflow as tf
 from tensorflow import keras
@@ -66,9 +68,11 @@ from tensorflow.keras.datasets import mnist
 
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
-x_train, x_test = tf.keras.utils.normalize(x_train, axis = 1), tf.keras.utils.normalize(x_test, axis = 1)
+x_train = tf.keras.utils.normalize(x_train, axis = 1)
+x_test = tf.keras.utils.normalize(x_test, axis = 1)
 
-x_train, x_test = x_train[..., np.newaxis], x_test[..., np.newaxis]
+x_train = x_train[..., np.newaxis]
+x_test = x_test[..., np.newaxis]
 
 from tensorflow.keras.utils import to_categorical
 
@@ -87,11 +91,15 @@ from tensorflow.keras.layers import AveragePooling2D, Conv2D, Dense, Flatten
 
 model = tf.keras.Sequential()
 
-model.add(Conv2D(6, kernel_size = (5, 5), strides = (1, 1), activation = 'tanh', padding = 'same',
-                   input_shape = (IMAGE_DIM_0, IMAGE_DIM_1, 1)))
-model.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2), padding = 'valid'))
-model.add(Conv2D(16, kernel_size = (5, 5), strides = (1, 1), activation = 'tanh', padding = 'valid'))
-model.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2), padding = 'valid'))
+model.add(Conv2D(6, kernel_size = (5, 5), strides = (1, 1),
+                 activation = 'tanh', padding = 'same',
+                 input_shape = (IMAGE_DIM_0, IMAGE_DIM_1, 1)))
+model.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2),
+                           padding = 'valid'))
+model.add(Conv2D(16, kernel_size = (5, 5), strides = (1, 1),
+                 activation = 'tanh', padding = 'valid'))
+model.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2),
+                           padding = 'valid'))
 model.add(Flatten())
 model.add(Dense(120, activation = 'tanh'))
 model.add(Dense(84, activation = 'tanh'))
@@ -107,38 +115,54 @@ model.summary()
 
 EPOCHS_N = 20
 
-history = model.fit(x = x_train, y = y_train, validation_split = 0.15, epochs = EPOCHS_N)
+history = model.fit(x = x_train, y = y_train, validation_split = 0.15,
+                    epochs = EPOCHS_N, verbose = 0)
 
 # Commented out IPython magic to ensure Python compatibility.
 # %matplotlib inline
 
 import matplotlib.pyplot as plt
-
 import seaborn as sns
-
 from matplotlib import rcParams
 
-rcParams['figure.figsize'] = 11.7, 8.27
+rcParams['figure.figsize'] = 8, 6
 
 sns.set()
-
 sns.set_palette(sns.color_palette('hls'))
 
-plt.plot(history.history['categorical_accuracy'])
-plt.plot(history.history['val_categorical_accuracy'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'right')
-plt.show()
+def plot_accuracy(_history,
+                  _train_acc_name = 'accuracy',
+                  _val_acc_name = 'val_accuracy'):
 
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'right')
-plt.show()
+    plt.plot(_history.history[_train_acc_name])
+    plt.plot(_history.history[_val_acc_name])
+
+    plt.title('Model accuracy')
+
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+
+    plt.legend(['Train', 'Validation'], loc = 'right')
+
+    plt.show()
+
+def plot_loss(_history):
+
+    plt.plot(_history.history['loss'])
+    plt.plot(_history.history['val_loss'])
+
+    plt.title('Model loss')
+
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+
+    plt.legend(['Train', 'Validation'], loc = 'right')
+
+    plt.show()
+
+plot_accuracy(history, 'categorical_accuracy', 'val_categorical_accuracy')
+
+plot_loss(history)
 
 results = model.evaluate(x_test, y_test)
 
@@ -149,6 +173,8 @@ print('Test loss, test accuracy:', results)
 ### Задание 2
 
 После уточнения модели на синтетических данных попробуйте обучить ее на реальных данных (набор _Google Street View_). Что изменилось в модели?
+
+##### Одна цифра
 """
 
 DS_URL_FOLDER = 'http://ufldl.stanford.edu/housenumbers/'
@@ -187,9 +213,12 @@ def tar_gz_to_dir(_url_folder, _name, _ext, _key):
 
     return dir_name_
 
-second_ds_train_file = load_file(DS_URL_FOLDER, TRAIN_DS_NAME, SECOND_DS_EXT, 'second')
-second_ds_test_file = load_file(DS_URL_FOLDER, TEST_DS_NAME, SECOND_DS_EXT, 'second')
-second_ds_extra_file = load_file(DS_URL_FOLDER, EXTRA_DS_NAME, SECOND_DS_EXT, 'second')
+second_ds_train_file = load_file(DS_URL_FOLDER, TRAIN_DS_NAME, SECOND_DS_EXT,
+                                 'second')
+second_ds_test_file = load_file(DS_URL_FOLDER, TEST_DS_NAME, SECOND_DS_EXT,
+                                'second')
+second_ds_extra_file = load_file(DS_URL_FOLDER, EXTRA_DS_NAME, SECOND_DS_EXT,
+                                 'second')
 
 from scipy import io
 
@@ -218,7 +247,7 @@ import seaborn as sns
 
 from matplotlib import rcParams
 
-rcParams['figure.figsize'] = 11.7, 8.27
+rcParams['figure.figsize'] = 8, 6
 
 sns.set()
 
@@ -228,6 +257,8 @@ plt.imshow(X_second_ds_train[0])
 
 plt.show()
 
+IMAGE_DIM_0_2 = X_second_ds_train.shape[-3]
+IMAGE_DIM_1_2 = X_second_ds_train.shape[-3], X_second_ds_train.shape[-2], X_second_ds_train.shape[-1]
 IMAGE_DIM_0_2, IMAGE_DIM_1_2, IMAGE_DIM_2_2 = X_second_ds_train.shape[-3], X_second_ds_train.shape[-2], X_second_ds_train.shape[-1]
 
 y_second_ds_train_cat = to_categorical(y_second_ds_train)
@@ -237,11 +268,15 @@ CLASSES_N_2 = y_second_ds_train_cat.shape[1]
 
 model_2 = tf.keras.Sequential()
 
-model_2.add(Conv2D(6, kernel_size = (5, 5), strides = (1, 1), activation = 'tanh', padding = 'same',
+model_2.add(Conv2D(6, kernel_size = (5, 5), strides = (1, 1),
+                   activation = 'tanh', padding = 'same',
                    input_shape = (IMAGE_DIM_0_2, IMAGE_DIM_1_2, IMAGE_DIM_2_2)))
-model_2.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2), padding = 'valid'))
-model_2.add(Conv2D(16, kernel_size = (5, 5), strides = (1, 1), activation = 'tanh', padding = 'valid'))
-model_2.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2), padding = 'valid'))
+model_2.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2),
+                             padding = 'valid'))
+model_2.add(Conv2D(16, kernel_size = (5, 5), strides = (1, 1),
+                   activation = 'tanh', padding = 'valid'))
+model_2.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2),
+                             padding = 'valid'))
 model_2.add(Flatten())
 model_2.add(Dense(120, activation = 'tanh'))
 model_2.add(Dense(84, activation = 'tanh'))
@@ -253,31 +288,22 @@ model_2.compile(optimizer = 'adam',
 
 model_2.summary()
 
-history_2 = model_2.fit(x = X_second_ds_train, y = y_second_ds_train_cat, validation_split = 0.15, epochs = EPOCHS_N)
+history_2 = model_2.fit(x = X_second_ds_train, y = y_second_ds_train_cat,
+                        validation_split = 0.15, epochs = EPOCHS_N, verbose = 0)
 
-plt.plot(history_2.history['categorical_accuracy'])
-plt.plot(history_2.history['val_categorical_accuracy'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'right')
-plt.show()
+plot_accuracy(history_2, 'categorical_accuracy', 'val_categorical_accuracy')
 
-plt.plot(history_2.history['loss'])
-plt.plot(history_2.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'right')
-plt.show()
+plot_loss(history_2)
 
 results = model_2.evaluate(X_second_ds_test, y_second_ds_test_cat)
 
 print('Test loss, test accuracy:', results)
 
-"""Прежде всего, в модели изменилось то, что добавился ещё один класс &mdash; _не распознано_.
+"""Здесь в модели изменилось то, что добавился ещё один класс &mdash; _не распознано_.
 
 Эти данные более сложны для распознавания, что повлияло на результат &mdash; точность распознавания на тестовой выборке составила 83%.
+
+##### Несколько цифр
 
 Загрузим первый датасет &mdash; реальные изображения с несколькими цифрами и рамками границ.
 """
@@ -313,8 +339,10 @@ def dir_to_dataframe(_dir_path):
 
     return dataframe_
 
-first_ds_train_dir = tar_gz_to_dir(DS_URL_FOLDER, TRAIN_DS_NAME, FIRST_DS_EXT, 'first')
-first_ds_test_dir = tar_gz_to_dir(DS_URL_FOLDER, TEST_DS_NAME, FIRST_DS_EXT, 'first')
+first_ds_train_dir = tar_gz_to_dir(DS_URL_FOLDER, TRAIN_DS_NAME, FIRST_DS_EXT,
+                                   'first')
+first_ds_test_dir = tar_gz_to_dir(DS_URL_FOLDER, TEST_DS_NAME, FIRST_DS_EXT,
+                                  'first')
 
 first_ds_train_subdir = os.path.join(first_ds_train_dir, 'train')
 first_ds_test_subdir = os.path.join(first_ds_test_dir, 'test')
@@ -324,8 +352,10 @@ first_ds_test_images_df = dir_to_dataframe(first_ds_test_subdir)
 
 import h5py
 
-first_ds_train_boxes_mat = h5py.File(os.path.join(first_ds_train_subdir, 'digitStruct.mat'), 'r')
-first_ds_test_boxes_mat = h5py.File(os.path.join(first_ds_test_subdir, 'digitStruct.mat'), 'r')
+first_ds_train_boxes_mat = h5py.File(
+    os.path.join(first_ds_train_subdir, 'digitStruct.mat'), 'r')
+first_ds_test_boxes_mat = h5py.File(
+    os.path.join(first_ds_test_subdir, 'digitStruct.mat'), 'r')
 
 import numpy as np
 import pickle
@@ -358,8 +388,10 @@ def mat_to_pickle(_mat_path, _key):
     with open('{}.pickle'.format((_key)),'wb') as pf:
         pickle.dump(metadata, pf, pickle.HIGHEST_PROTOCOL)
 
-mat_to_pickle(os.path.join(first_ds_train_subdir, 'digitStruct.mat'), 'train_bbox')
-mat_to_pickle(os.path.join(first_ds_test_subdir, 'digitStruct.mat'), 'test_bbox')
+mat_to_pickle(
+    os.path.join(first_ds_train_subdir, 'digitStruct.mat'), 'train_bbox')
+mat_to_pickle(
+    os.path.join(first_ds_test_subdir, 'digitStruct.mat'), 'test_bbox')
 
 train_bbox_data = np.load('train_bbox.pickle', allow_pickle = True)
 test_bbox_data = np.load('test_bbox.pickle', allow_pickle = True)
