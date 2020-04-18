@@ -23,6 +23,10 @@ Original file is located at
 Загрузите данные. Разделите исходный набор данных на обучающую и валидационную выборки.
 """
 
+import warnings
+
+warnings.filterwarnings('ignore')
+
 from google.colab import drive
 
 drive.mount('/content/drive', force_remount = True)
@@ -85,18 +89,20 @@ test_df_reshaped = to_images_and_labels(test_df)
 
 ! pip install tensorflow-gpu --pre --quiet
 
-! pip show tensorflow-gpu
-
 import tensorflow as tf
 
 from tensorflow.keras.utils import to_categorical
 import numpy as np
 
-X_train = tf.keras.utils.normalize(np.asarray(list(train_df_reshaped['image'])), axis = 1)
-X_test = tf.keras.utils.normalize(np.asarray(list(test_df_reshaped['image'])), axis = 1)
+X_train = tf.keras.utils.normalize(np.asarray(list(train_df_reshaped['image'])),
+                                   axis = 1)
+X_test = tf.keras.utils.normalize(np.asarray(list(test_df_reshaped['image'])),
+                                  axis = 1)
 
-y_train = to_categorical(train_df_reshaped['label'].astype('category').cat.codes.astype('int32'))
-y_test = to_categorical(test_df_reshaped['label'].astype('category').cat.codes.astype('int32'))
+y_train = to_categorical(train_df_reshaped['label']
+                         .astype('category').cat.codes.astype('int32'))
+y_test = to_categorical(test_df_reshaped['label']
+                        .astype('category').cat.codes.astype('int32'))
 
 X_train.shape, y_train.shape, X_test.shape, y_test.shape
 
@@ -107,11 +113,15 @@ from tensorflow.keras.layers import AveragePooling2D, Conv2D, Dense, Flatten
 
 model = tf.keras.Sequential()
 
-model.add(Conv2D(6, kernel_size = (5, 5), strides = (1, 1), activation = 'tanh', padding = 'same',
-                   input_shape = (IMAGE_DIM, IMAGE_DIM, 1)))
-model.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2), padding = 'valid'))
-model.add(Conv2D(16, kernel_size = (5, 5), strides = (1, 1), activation = 'tanh', padding = 'valid'))
-model.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2), padding = 'valid'))
+model.add(Conv2D(6, kernel_size = (5, 5), strides = (1, 1),
+                 activation = 'tanh', padding = 'same',
+                 input_shape = (IMAGE_DIM, IMAGE_DIM, 1)))
+model.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2),
+                           padding = 'valid'))
+model.add(Conv2D(16, kernel_size = (5, 5), strides = (1, 1),
+                 activation = 'tanh', padding = 'valid'))
+model.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2),
+                           padding = 'valid'))
 model.add(Flatten())
 model.add(Dense(120, activation = 'tanh'))
 model.add(Dense(84, activation = 'tanh'))
@@ -123,44 +133,60 @@ model.compile(optimizer = 'adam',
 
 model.summary()
 
-history = model.fit(x = X_train, y = y_train, epochs = 20, validation_split = 0.15)
+history = model.fit(x = X_train, y = y_train, epochs = 20,
+                    validation_split = 0.15, verbose = 0)
 
 # Commented out IPython magic to ensure Python compatibility.
 # %matplotlib inline
 
 import matplotlib.pyplot as plt
-
 import seaborn as sns
-
 from matplotlib import rcParams
 
-rcParams['figure.figsize'] = 11.7, 8.27
+rcParams['figure.figsize'] = 8, 6
 
 sns.set()
-
 sns.set_palette(sns.color_palette('hls'))
 
-plt.plot(history.history['categorical_accuracy'])
-plt.plot(history.history['val_categorical_accuracy'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'upper left')
-plt.show()
+def plot_accuracy(_history,
+                  _train_acc_name = 'accuracy',
+                  _val_acc_name = 'val_accuracy'):
 
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'upper left')
-plt.show()
+    plt.plot(_history.history[_train_acc_name])
+    plt.plot(_history.history[_val_acc_name])
+
+    plt.title('Model accuracy')
+
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+
+    plt.legend(['Train', 'Validation'], loc = 'right')
+
+    plt.show()
+
+def plot_loss(_history):
+
+    plt.plot(_history.history['loss'])
+    plt.plot(_history.history['val_loss'])
+
+    plt.title('Model loss')
+
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+
+    plt.legend(['Train', 'Validation'], loc = 'right')
+
+    plt.show()
+
+plot_accuracy(history, 'categorical_accuracy', 'val_categorical_accuracy')
+
+plot_loss(history)
 
 results = model.evaluate(X_test, y_test)
 
 print('Test loss, test accuracy:', results)
 
-"""За 20 эпох удалось достичь точности 84% на тестовой выборке.
+"""За 20 эпох удалось достичь точности 83% на тестовой выборке.
 
 ### Задание 3
 
@@ -185,23 +211,12 @@ X_train_augmented.shape
 
 y_train_augmented = y_train
 
-history_2 = model.fit(x = X_train_augmented, y = y_train_augmented, epochs = 20, validation_split = 0.15)
+history_2 = model.fit(x = X_train_augmented, y = y_train_augmented, epochs = 20,
+                      validation_split = 0.15, verbose = 0)
 
-plt.plot(history_2.history['categorical_accuracy'])
-plt.plot(history_2.history['val_categorical_accuracy'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'upper left')
-plt.show()
+plot_accuracy(history_2, 'categorical_accuracy', 'val_categorical_accuracy')
 
-plt.plot(history_2.history['loss'])
-plt.plot(history_2.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'upper left')
-plt.show()
+plot_loss(history_2)
 
 results_2 = model.evaluate(X_test, y_test)
 
