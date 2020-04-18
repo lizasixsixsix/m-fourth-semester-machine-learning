@@ -26,6 +26,10 @@ http://yaroslavvb.blogspot.sg/2011/09/notmnist-dataset.html
 Загрузите данные и отобразите на экране несколько из изображений с помощью языка Python.
 """
 
+import warnings
+
+warnings.filterwarnings('ignore')
+
 SMALL_DS_URL = 'https://commondatastorage.googleapis.com/books1000/notMNIST_small.tar.gz'
 LARGE_DS_URL = 'https://commondatastorage.googleapis.com/books1000/notMNIST_large.tar.gz'
 
@@ -33,15 +37,12 @@ LARGE_DS_URL = 'https://commondatastorage.googleapis.com/books1000/notMNIST_larg
 # %matplotlib inline
 
 import matplotlib.pyplot as plt
-
 import seaborn as sns
-
 from matplotlib import rcParams
 
 rcParams['figure.figsize'] = 11.7, 8.27
 
 sns.set()
-
 sns.set_palette(sns.color_palette('hls'))
 
 from urllib.request import urlretrieve
