@@ -24,7 +24,13 @@ http://yaroslavvb.blogspot.sg/2011/09/notmnist-dataset.html
 ### Задание 1
 
 Реализуйте полносвязную нейронную сеть с помощью библиотеки _TensorFlow_. В качестве алгоритма оптимизации можно использовать, например, стохастический градиент (_Stochastic Gradient Descent_, _SGD_). Определите количество скрытых слоев от 1 до 5, количество нейронов в каждом из слоев до нескольких сотен, а также их функции активации (кусочно-линейная, сигмоидная, гиперболический тангенс и т.д.).
+
+Загрузим файл с датасетом, обработанным в лабораторной работе №1.
 """
+
+import warnings
+
+warnings.filterwarnings('ignore')
 
 from google.colab import drive
 
@@ -47,8 +53,6 @@ dataframe = pd.read_pickle("./large.pkl")
 dataframe['data'].shape
 
 ! pip install tensorflow-gpu --pre --quiet
-
-! pip show tensorflow-gpu
 
 import tensorflow as tf
 
@@ -91,7 +95,8 @@ from tensorflow.keras.layers import Dense, Reshape
 
 model = tf.keras.Sequential()
 
-model.add(Reshape((IMAGE_DIM_0 * IMAGE_DIM_1,), input_shape = (IMAGE_DIM_0, IMAGE_DIM_1, 1)))
+model.add(Reshape((IMAGE_DIM_0 * IMAGE_DIM_1,),
+                  input_shape = (IMAGE_DIM_0, IMAGE_DIM_1, 1)))
 model.add(Dense(LAYER_WIDTH, activation = 'relu'))
 model.add(Dense(LAYER_WIDTH, activation = 'sigmoid'))
 model.add(Dense(LAYER_WIDTH, activation = 'tanh'))
@@ -100,7 +105,8 @@ model.add(Dense(LAYER_WIDTH, activation = 'softmax'))
 model.add(Dense(CLASSES_N))
 
 def cat_cross_from_logits(y_true, y_pred):
-    return tf.keras.losses.categorical_crossentropy(y_true, y_pred, from_logits = True)
+    return tf.keras.losses.categorical_crossentropy(
+        y_true, y_pred, from_logits = True)
 
 model.compile(optimizer = 'sgd',
               loss = cat_cross_from_logits,
@@ -112,40 +118,53 @@ VAL_SPLIT_RATE = 0.1
 
 EPOCHS_N = 10
 
-history = model.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
+history = model.fit(x = x, y = y, epochs = EPOCHS_N,
+                    validation_split = VAL_SPLIT_RATE, verbose = 0)
 
 # Commented out IPython magic to ensure Python compatibility.
 # %matplotlib inline
 
 import matplotlib.pyplot as plt
-
 import seaborn as sns
-
 from matplotlib import rcParams
 
 rcParams['figure.figsize'] = 11.7, 8.27
 
 sns.set()
-
 sns.set_palette(sns.color_palette('hls'))
 
-import matplotlib.pyplot as plt
+def plot_accuracy(_history,
+                 _train_acc_name = 'accuracy', _val_acc_name = 'val_accuracy'):
 
-plt.plot(history.history['categorical_accuracy'])
-plt.plot(history.history['val_categorical_accuracy'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'right')
-plt.show()
+    plt.plot(_history.history[_train_acc_name])
+    plt.plot(_history.history[_val_acc_name])
 
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'right')
-plt.show()
+    plt.title('Model accuracy')
+
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+
+    plt.legend(['Train', 'Validation'], loc = 'right')
+
+    plt.show()
+
+def plot_loss(_history):
+
+    plt.plot(_history.history['loss'])
+    plt.plot(_history.history['val_loss'])
+
+    plt.title('Model loss')
+
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+
+    plt.legend(['Train', 'Validation'], loc = 'right')
+
+    plt.show()
+
+plot_accuracy(history, 'categorical_accuracy', 'val_categorical_accuracy')
+
+plot_loss(history)
 
 results = model.evaluate(x_test, y_test)
 
@@ -176,16 +195,22 @@ dropout_layer = Dropout(DROPOUT_RATE)
 
 model_2 = tf.keras.Sequential()
 
-model_2.add(Reshape((IMAGE_DIM_0 * IMAGE_DIM_1,), input_shape = (IMAGE_DIM_0, IMAGE_DIM_1, 1)))
-model_2.add(Dense(LAYER_WIDTH, activation = 'relu', kernel_regularizer = l2_reg))
+model_2.add(Reshape((IMAGE_DIM_0 * IMAGE_DIM_1,),
+                    input_shape = (IMAGE_DIM_0, IMAGE_DIM_1, 1)))
+model_2.add(Dense(LAYER_WIDTH, activation = 'relu',
+                  kernel_regularizer = l2_reg))
 model_2.add(dropout_layer)
-model_2.add(Dense(LAYER_WIDTH, activation = 'sigmoid', kernel_regularizer = l2_reg))
+model_2.add(Dense(LAYER_WIDTH, activation = 'sigmoid',
+                  kernel_regularizer = l2_reg))
 model_2.add(dropout_layer)
-model_2.add(Dense(LAYER_WIDTH, activation = 'tanh', kernel_regularizer = l2_reg))
+model_2.add(Dense(LAYER_WIDTH, activation = 'tanh',
+                  kernel_regularizer = l2_reg))
 model_2.add(dropout_layer)
-model_2.add(Dense(LAYER_WIDTH, activation = 'sigmoid', kernel_regularizer = l2_reg))
+model_2.add(Dense(LAYER_WIDTH, activation = 'sigmoid',
+                  kernel_regularizer = l2_reg))
 model_2.add(dropout_layer)
-model_2.add(Dense(LAYER_WIDTH, activation = 'relu', kernel_regularizer = l2_reg))
+model_2.add(Dense(LAYER_WIDTH, activation = 'relu',
+                  kernel_regularizer = l2_reg))
 model_2.add(dropout_layer)
 model_2.add(Dense(CLASSES_N))
 
@@ -195,29 +220,18 @@ model_2.compile(optimizer = 'sgd',
 
 model_2.summary()
 
-history_2 = model_2.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
+history_2 = model_2.fit(x = x, y = y, epochs = EPOCHS_N,
+                        validation_split = VAL_SPLIT_RATE, verbose = 0)
 
-plt.plot(history_2.history['categorical_accuracy'])
-plt.plot(history_2.history['val_categorical_accuracy'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'right')
-plt.show()
+plot_accuracy(history_2, 'categorical_accuracy', 'val_categorical_accuracy')
 
-plt.plot(history_2.history['loss'])
-plt.plot(history_2.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'right')
-plt.show()
+plot_loss(history_2)
 
 results_2 = model_2.evaluate(x_test, y_test)
 
 print('Test loss, test accuracy:', results_2)
 
-"""Регуляризация и сброс нейронов значительно помогли &mdash; модель показывает 62% точности на тестовой выборке.
+"""Регуляризация и сброс нейронов значительно помогли &mdash; модель показывает 61% точности на тестовой выборке.
 
 ### Задание 4
 
@@ -232,29 +246,18 @@ model_2.compile(optimizer = dyn_lr_sgd,
                 loss = cat_cross_from_logits,
                 metrics = ['categorical_accuracy'])
 
-history_3 = model_2.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
+history_3 = model_2.fit(x = x, y = y, epochs = EPOCHS_N,
+                        validation_split = VAL_SPLIT_RATE, verbose = 0)
 
-plt.plot(history_3.history['categorical_accuracy'])
-plt.plot(history_3.history['val_categorical_accuracy'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'right')
-plt.show()
+plot_accuracy(history_3, 'categorical_accuracy', 'val_categorical_accuracy')
 
-plt.plot(history_3.history['loss'])
-plt.plot(history_3.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'right')
-plt.show()
+plot_loss(history_3)
 
 results_3 = model_2.evaluate(x_test, y_test)
 
 print('Test loss, test accuracy:', results_3)
 
-"""Динамически изменяемая скорость обучения улучшила результат &mdash; 72% на тестовой выборке.
+"""Динамически изменяемая скорость обучения улучшила результат &mdash; 68% на тестовой выборке.
 
 Можно сделать вывод, что модель с полносвязными слоями может использоваться для решения задачи распознавания изображений, однако она очевидно не является наилучшей.
 """
