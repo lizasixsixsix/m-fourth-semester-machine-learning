@@ -24,7 +24,13 @@ http://yaroslavvb.blogspot.sg/2011/09/notmnist-dataset.html
 ### Задание 1
 
 Реализуйте нейронную сеть с двумя сверточными слоями, и одним полносвязным с нейронами с кусочно-линейной функцией активации. Какова точность построенной модели?
+
+Загрузим файл с датасетом, обработанным в лабораторной работе №1.
 """
+
+import warnings
+
+warnings.filterwarnings('ignore')
 
 from google.colab import drive
 
@@ -45,8 +51,6 @@ import pandas as pd
 dataframe = pd.read_pickle("./large.pkl")
 
 ! pip install tensorflow-gpu --pre --quiet
-
-! pip show tensorflow-gpu
 
 import tensorflow as tf
 
@@ -76,18 +80,45 @@ x_test.shape
 # %matplotlib inline
 
 import matplotlib.pyplot as plt
-
 import seaborn as sns
-
 from matplotlib import rcParams
 
-rcParams['figure.figsize'] = 11.7, 8.27
+rcParams['figure.figsize'] = 8, 6
 
 sns.set()
-
 sns.set_palette(sns.color_palette('hls'))
 
-plt.imshow(x[100].squeeze())
+def plot_accuracy(_history,
+                  _train_acc_name = 'accuracy',
+                  _val_acc_name = 'val_accuracy'):
+
+    plt.plot(_history.history[_train_acc_name])
+    plt.plot(_history.history[_val_acc_name])
+
+    plt.title('Model accuracy')
+
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+
+    plt.legend(['Train', 'Validation'], loc = 'right')
+
+    plt.show()
+
+def plot_loss(_history):
+
+    plt.plot(_history.history['loss'])
+    plt.plot(_history.history['val_loss'])
+
+    plt.title('Model loss')
+
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+
+    plt.legend(['Train', 'Validation'], loc = 'right')
+
+    plt.show()
+
+plt.imshow(x[0].squeeze())
 
 plt.show()
 
@@ -95,11 +126,13 @@ IMAGE_DIM_0, IMAGE_DIM_1 = x.shape[1], x.shape[2]
 
 from tensorflow.keras.utils import to_categorical
 
-y = to_categorical(dataframe['label'].astype('category').cat.codes.astype('int32'))
+y = to_categorical(dataframe['label']
+                   .astype('category').cat.codes.astype('int32'))
 
 y.shape
 
-y_test = to_categorical(dataframe_test['label'].astype('category').cat.codes.astype('int32'))
+y_test = to_categorical(dataframe_test['label']
+                        .astype('category').cat.codes.astype('int32'))
 
 y_test.shape
 
@@ -112,14 +145,16 @@ from tensorflow.keras.layers import Conv2D, Dense, Flatten
 
 model = tf.keras.Sequential()
 
-model.add(Conv2D(16, 3, padding = 'same', activation = 'relu', input_shape = (IMAGE_DIM_0, IMAGE_DIM_1, 1)))
+model.add(Conv2D(16, 3, padding = 'same', activation = 'relu',
+                 input_shape = (IMAGE_DIM_0, IMAGE_DIM_1, 1)))
 model.add(Conv2D(32, 3, padding = 'same', activation = 'relu'))
 model.add(Flatten())
 model.add(Dense(DENSE_LAYER_WIDTH, activation = 'relu'))
 model.add(Dense(CLASSES_N))
 
 def cat_cross_from_logits(y_true, y_pred):
-    return tf.keras.losses.categorical_crossentropy(y_true, y_pred, from_logits = True)
+    return tf.keras.losses.categorical_crossentropy(
+        y_true, y_pred, from_logits = True)
 
 model.compile(optimizer = 'sgd',
               loss = cat_cross_from_logits,
@@ -131,29 +166,18 @@ VAL_SPLIT_RATE = 0.1
 
 EPOCHS_N = 10
 
-history = model.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
+history = model.fit(x = x, y = y, epochs = EPOCHS_N,
+                    validation_split = VAL_SPLIT_RATE, verbose = 0)
 
-plt.plot(history.history['categorical_accuracy'])
-plt.plot(history.history['val_categorical_accuracy'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'right')
-plt.show()
+plot_accuracy(history, 'categorical_accuracy', 'val_categorical_accuracy')
 
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'right')
-plt.show()
+plot_loss(history)
 
 results = model.evaluate(x_test, y_test)
 
 print('Test loss, test accuracy:', results)
 
-"""Лучшая точность построенной модели на тестовой выборке составила 89%.
+"""Точность построенной модели на тестовой выборке составила 90%.
 
 ### Задание 2
 
@@ -164,7 +188,8 @@ from tensorflow.keras.layers import MaxPooling2D
 
 model_2 = tf.keras.Sequential()
 
-model_2.add(Conv2D(16, 3, padding = 'same', activation = 'relu', input_shape = (IMAGE_DIM_0, IMAGE_DIM_1, 1)))
+model_2.add(Conv2D(16, 3, padding = 'same', activation = 'relu',
+                   input_shape = (IMAGE_DIM_0, IMAGE_DIM_1, 1)))
 model_2.add(MaxPooling2D())
 model_2.add(Flatten())
 model_2.add(Dense(DENSE_LAYER_WIDTH, activation = 'relu'))
@@ -176,29 +201,18 @@ model_2.compile(optimizer = 'sgd',
 
 model_2.summary()
 
-history_2 = model_2.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
+history_2 = model_2.fit(x = x, y = y, epochs = EPOCHS_N,
+                        validation_split = VAL_SPLIT_RATE, verbose = 0)
 
-plt.plot(history_2.history['categorical_accuracy'])
-plt.plot(history_2.history['val_categorical_accuracy'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'right')
-plt.show()
+plot_accuracy(history_2, 'categorical_accuracy', 'val_categorical_accuracy')
 
-plt.plot(history_2.history['loss'])
-plt.plot(history_2.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'right')
-plt.show()
+plot_loss(history_2)
 
 results_2 = model_2.evaluate(x_test, y_test)
 
 print('Test loss, test accuracy:', results_2)
 
-"""Замена свёрточного слоя на операцию пулинга снизила точность на тестовой выборке до 87%.
+"""Замена свёрточного слоя на операцию пулинга немного снизила точность на тестовой выборке &mdash; до 88%.
 
 ### Задание 3
 
@@ -209,11 +223,15 @@ from tensorflow.keras.layers import AveragePooling2D
 
 model_3 = tf.keras.Sequential()
 
-model_3.add(Conv2D(6, kernel_size = (5, 5), strides = (1, 1), activation = 'tanh', padding = 'same',
+model_3.add(Conv2D(6, kernel_size = (5, 5), strides = (1, 1),
+                   activation = 'tanh', padding = 'same',
                    input_shape = (IMAGE_DIM_0, IMAGE_DIM_1, 1)))
-model_3.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2), padding = 'valid'))
-model_3.add(Conv2D(16, kernel_size = (5, 5), strides = (1, 1), activation = 'tanh', padding = 'valid'))
-model_3.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2), padding = 'valid'))
+model_3.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2),
+                             padding = 'valid'))
+model_3.add(Conv2D(16, kernel_size = (5, 5), strides = (1, 1),
+                   activation = 'tanh', padding = 'valid'))
+model_3.add(AveragePooling2D(pool_size = (2, 2), strides = (2, 2),
+                             padding = 'valid'))
 model_3.add(Flatten())
 model_3.add(Dense(120, activation = 'tanh'))
 model_3.add(Dense(84, activation = 'tanh'))
@@ -223,29 +241,18 @@ model_3.compile(optimizer = 'adam',
                 loss = 'categorical_crossentropy',
                 metrics = ['categorical_accuracy'])
 
-history_3 = model_3.fit(x = x, y = y, epochs = EPOCHS_N, validation_split = VAL_SPLIT_RATE)
+history_3 = model_3.fit(x = x, y = y, epochs = EPOCHS_N,
+                        validation_split = VAL_SPLIT_RATE, verbose = 0)
 
-plt.plot(history_3.history['categorical_accuracy'])
-plt.plot(history_3.history['val_categorical_accuracy'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'right')
-plt.show()
+plot_accuracy(history_3, 'categorical_accuracy', 'val_categorical_accuracy')
 
-plt.plot(history_3.history['loss'])
-plt.plot(history_3.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'right')
-plt.show()
+plot_loss(history_3)
 
 results_3 = model_3.evaluate(x_test, y_test)
 
 print('Test loss, test accuracy:', results_3)
 
-"""Удивительно, но _LeNet-5_ показала результат хуже, чем первая и вторая модель &mdash; 85% на тестовой выборке. Объяснить это можно тем, что первая модель содержит свёрточный слой с большей выходной размерностью.
+"""Удивительно, но _LeNet-5_ показала результат хуже, чем первая и вторая &mdash; 86% на тестовой выборке. Объяснить это можно различиями в размерностях слоёв.
 
 ### Задание 4
 
@@ -257,15 +264,15 @@ print('Test loss, test accuracy:', results_3)
 
 * модель с только полносвязными слоями &mdash; 10%;
 
-    * с регуляризацией и сбросом нейронов &mdash; 62%;
+    * с регуляризацией и сбросом нейронов &mdash; 63%;
 
-        * с адаптивным шагом &mdash; 72%;
+        * с адаптивным шагом &mdash; 64%;
 
-* модель с двумя свёрточными слоями и одним полносвязным &mdash; 89%;
+* модель с двумя свёрточными слоями и одним полносвязным &mdash; 90%;
 
-* модель с одним свёрточным слоем, операцией пулинга и одним полносвязным &mdash; 87%;
+* модель с одним свёрточным слоем, операцией пулинга и одним полносвязным &mdash; 88%;
 
-* _LeNet-5_ &mdash; два свёрточных слоя, две операции пулинга, два полносвязных слоя &mdash; 85%.
+* _LeNet-5_ &mdash; два свёрточных слоя, две операции пулинга, два полносвязных слоя &mdash; 86%.
 
-Объяснение превосходства свёрточных сетей над полносвязными &mdash; такая архитектура просто предназначена для работы с изображениями.
+Объяснение превосходства свёрточных сетей над полносвязными &mdash; такая архитектура лучше сочетается с природой изображений.
 """
