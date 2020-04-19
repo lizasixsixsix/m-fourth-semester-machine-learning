@@ -19,6 +19,14 @@ Original file is located at
 Загрузите данные. Изобразите ряд в виде графика. Вычислите основные характеристики временного ряда (сезонность, тренд, автокорреляцию).
 """
 
+import warnings
+
+warnings.filterwarnings('ignore')
+
+import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 from google.colab import drive
 
 drive.mount('/content/drive', force_remount = True)
@@ -52,22 +60,50 @@ all_df.keys()
 
 from statsmodels.tsa.seasonal import seasonal_decompose
 
-additive = seasonal_decompose(all_df['Monthly Mean Total Sunspot Number'], model = 'additive', extrapolate_trend = 'freq')
+additive = seasonal_decompose(all_df['Monthly Mean Total Sunspot Number'],
+                              model = 'additive', extrapolate_trend = 'freq')
 
 # Commented out IPython magic to ensure Python compatibility.
 # %matplotlib inline
 
 import matplotlib.pyplot as plt
-
 import seaborn as sns
-
 from matplotlib import rcParams
 
-rcParams['figure.figsize'] = 11.7, 8.27
+rcParams['figure.figsize'] = 12, 8
 
 sns.set()
+sns.set_palette(sns.color_palette('hls'))
 
-sns.set_palette(sns.color_palette('hls', 8))
+def plot_accuracy(_history,
+                  _train_acc_name = 'accuracy',
+                  _val_acc_name = 'val_accuracy'):
+
+    plt.plot(_history.history[_train_acc_name])
+    plt.plot(_history.history[_val_acc_name])
+
+    plt.title('Model accuracy')
+
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+
+    plt.legend(['Train', 'Validation'], loc = 'right')
+
+    plt.show()
+
+def plot_loss(_history):
+
+    plt.plot(_history.history['loss'])
+    plt.plot(_history.history['val_loss'])
+
+    plt.title('Model loss')
+
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+
+    plt.legend(['Train', 'Validation'], loc = 'right')
+
+    plt.show()
 
 sns.lineplot(data = additive.observed, label = 'Observed')
 sns.lineplot(data = additive.trend, label = 'Trend')
@@ -95,6 +131,8 @@ plt.show()
 
 from pandas.plotting import autocorrelation_plot
 
+rcParams['figure.figsize'] = 8, 6
+
 autocorrelation_plot(all_df.values.tolist())
 
 plt.title('Autocorrelation plot')
@@ -105,29 +143,33 @@ plt.show()
 
 Для прогнозирования разделите временной ряд на обучающую, валидационную и контрольную выборки.
 
-Этот шаг будет применён автоматически как параметр `validation_split` метода `model.fit()`.
+Этот шаг будет применён автоматически с помощью индексации массива данных и как параметр `validation_split` метода `model.fit()`.
 
 ### Задание 3
 
 Примените модель _ARIMA_ для прогнозирования значений данного временного ряда.
 """
 
-! pip install pmdarima
+! pip install pmdarima --quiet
 
-! pip show pmdarima
+TEST_PERIOD = 600
 
-test_period = 6 * 12
+OBSERVATIONS_PER_CYCLE = 11 * 12
 
 from pmdarima.arima import auto_arima
 
-arima = auto_arima(all_df['Monthly Mean Total Sunspot Number'][:-test_period],
-                   trace = True, error_action = 'ignore', suppress_warnings = True, seasonal = True, m = 12)
+arima = auto_arima(all_df['Monthly Mean Total Sunspot Number'][:-TEST_PERIOD],
+                   trace = True, error_action = 'ignore',
+                   suppress_warnings = True, seasonal = True,
+                   max_p = 1, max_q = 2,
+                   m = OBSERVATIONS_PER_CYCLE)
 
-arima_forecast = arima.predict(n_periods = test_period)
+arima_forecast = arima.predict(n_periods = TEST_PERIOD)
 
 from sklearn.metrics import mean_squared_error
 
-mean_squared_error(all_df['Monthly Mean Total Sunspot Number'][-test_period:], arima_forecast)
+mean_squared_error(all_df['Monthly Mean Total Sunspot Number'][-TEST_PERIOD:],
+                   arima_forecast)
 
 """### Задание 4
 
@@ -138,11 +180,7 @@ mean_squared_error(all_df['Monthly Mean Total Sunspot Number'][-test_period:], a
 
 ! pip install tensorflow-gpu --pre --quiet
 
-! pip show tensorflow-gpu
-
-TIME_STEPS = 100
-
-TEST_PERIOD = 1000
+TIME_STEPS = OBSERVATIONS_PER_CYCLE
 
 import numpy as np
 from datetime import timezone
@@ -164,9 +202,13 @@ def timeseries_to_dataset(_X_ts, _time_steps):
 
     return X_[..., np.newaxis], y_
 
-X, y = timeseries_to_dataset(all_df['Monthly Mean Total Sunspot Number'][:-TEST_PERIOD].values, TIME_STEPS)
+X, y = timeseries_to_dataset(
+    all_df['Monthly Mean Total Sunspot Number'][:-TEST_PERIOD].values,
+    TIME_STEPS)
 
-X_test, y_test = timeseries_to_dataset(all_df['Monthly Mean Total Sunspot Number'][-TEST_PERIOD:].values, TIME_STEPS)
+X_test, y_test = timeseries_to_dataset(
+    all_df['Monthly Mean Total Sunspot Number'][-TEST_PERIOD:].values,
+    TIME_STEPS)
 
 import tensorflow as tf
 from tensorflow import keras
@@ -176,7 +218,8 @@ from tensorflow.keras.layers import LSTM, Dense
 
 model = tf.keras.Sequential()
 
-model.add(LSTM(8, activation = 'relu', return_sequences = True, input_shape = X.shape[-2:]))
+model.add(LSTM(8, activation = 'relu', return_sequences = True,
+               input_shape = X.shape[-2:]))
 model.add(LSTM(8, activation = 'relu'))
 model.add(Dense(1))
 
@@ -186,23 +229,12 @@ model.compile(optimizer = 'adam',
 
 model.summary()
 
-history = model.fit(x = X, y = y, validation_split = 0.15, epochs = 20, verbose = 0)
+history = model.fit(x = X, y = y, epochs = 20, validation_split = 0.15,
+                    verbose = 0)
 
-plt.plot(history.history['accuracy'])
-plt.plot(history.history['val_accuracy'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'upper left')
-plt.show()
+plot_accuracy(history)
 
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'upper left')
-plt.show()
+plot_loss(history)
 
 results = model.evaluate(X_test, y_test)
 
@@ -214,5 +246,5 @@ print('Test mse, test accuracy:', results)
 
 Какой максимальный результат удалось получить на контрольной выборке?
 
-Нейронная сеть дала среднеквадратичную ошибку в 4 раза больше, чем ARIMA, а точность предсказания вообще равна нулю. Можно сделать вывод, что предсказание временных рядов требует более тонкой настройки архитектуры сетей.
+Нейронная сеть дала среднеквадратичную ошибку в 4 раза больше, чем _ARIMA_, а точность предсказания вообще равна нулю. Можно сделать вывод, что предсказание временных рядов требует более тонкой настройки архитектуры сетей.
 """
