@@ -258,8 +258,8 @@ plt.imshow(X_second_ds_train[0])
 plt.show()
 
 IMAGE_DIM_0_2 = X_second_ds_train.shape[-3]
-IMAGE_DIM_1_2 = X_second_ds_train.shape[-3], X_second_ds_train.shape[-2], X_second_ds_train.shape[-1]
-IMAGE_DIM_0_2, IMAGE_DIM_1_2, IMAGE_DIM_2_2 = X_second_ds_train.shape[-3], X_second_ds_train.shape[-2], X_second_ds_train.shape[-1]
+IMAGE_DIM_1_2 = X_second_ds_train.shape[-2]
+IMAGE_DIM_2_2 = X_second_ds_train.shape[-1]
 
 y_second_ds_train_cat = to_categorical(y_second_ds_train)
 y_second_ds_test_cat = to_categorical(y_second_ds_test)
@@ -299,9 +299,9 @@ results = model_2.evaluate(X_second_ds_test, y_second_ds_test_cat)
 
 print('Test loss, test accuracy:', results)
 
-"""Здесь в модели изменилось то, что добавился ещё один класс &mdash; _не распознано_.
+"""Здесь в модели изменилось то, что добавился ещё один класс &mdash; _нет цифры_.
 
-Эти данные более сложны для распознавания, что повлияло на результат &mdash; точность распознавания на тестовой выборке составила 83%.
+Эти данные более сложны для распознавания, что повлияло на результат &mdash; точность распознавания на тестовой выборке составила 84%.
 
 ##### Несколько цифр
 
@@ -400,7 +400,160 @@ plt.imshow(first_ds_train_images_df['data'][0])
 
 plt.show()
 
-train_bbox_data['label'][0]
+train_bbox_data['height'][5]
+
+MAX_DIGITS = 6
+
+def to_full_df(_ds_images_df, _bbox_data):
+
+    LENGTH = len(_bbox_data['height'])
+
+    BBOX_SHAPE_TUPLE = (LENGTH, MAX_DIGITS)
+
+    bbox_heights = np.zeros(BBOX_SHAPE_TUPLE)
+    bbox_labels = np.zeros(BBOX_SHAPE_TUPLE)
+    bbox_lefts = np.zeros(BBOX_SHAPE_TUPLE)
+    bbox_tops = np.zeros(BBOX_SHAPE_TUPLE)
+    bbox_widths = np.zeros(BBOX_SHAPE_TUPLE)
+
+    for i in range(LENGTH):
+
+        j = 0
+
+        l = len(_bbox_data['height'][i])
+
+        while j < l:
+
+            bbox_heights[i][j] = _bbox_data['height'][i][j]
+            bbox_labels[i][j] = _bbox_data['label'][i][j]
+            bbox_lefts[i][j] = _bbox_data['left'][i][j]
+            bbox_tops[i][j] = _bbox_data['top'][i][j]
+            bbox_widths[i][j] = _bbox_data['width'][i][j]
+
+            j = j + 1
+
+    data_dict_ = {
+        'data': _ds_images_df['data'],
+
+        'height_0': bbox_heights[:, 0],
+        'label_0': bbox_labels[:, 0],
+        'left_0': bbox_lefts[:, 0],
+        'top_0': bbox_tops[:, 0],
+        'width_0': bbox_widths[:, 0],
+
+        'height_1': bbox_heights[:, 1],
+        'label_1': bbox_labels[:, 1],
+        'left_1': bbox_lefts[:, 1],
+        'top_1': bbox_tops[:, 1],
+        'width_1': bbox_widths[:, 1],
+
+        'height_2': bbox_heights[:, 2],
+        'label_2': bbox_labels[:, 2],
+        'left_2': bbox_lefts[:, 2],
+        'top_2': bbox_tops[:, 2],
+        'width_2': bbox_widths[:, 2],
+
+        'height_3': bbox_heights[:, 3],
+        'label_3': bbox_labels[:, 3],
+        'left_3': bbox_lefts[:, 3],
+        'top_3': bbox_tops[:, 3],
+        'width_3': bbox_widths[:, 3],
+
+        'height_4': bbox_heights[:, 4],
+        'label_4': bbox_labels[:, 4],
+        'left_4': bbox_lefts[:, 4],
+        'top_4': bbox_tops[:, 4],
+        'width_4': bbox_widths[:, 4],
+
+        'height_5': bbox_heights[:, 5],
+        'label_5': bbox_labels[:, 5],
+        'left_5': bbox_lefts[:, 5],
+        'top_5': bbox_tops[:, 5],
+        'width_5': bbox_widths[:, 5],
+    }
+
+    full_ds_ = pd.DataFrame(data_dict_,
+                            columns = [
+                                       'data',
+
+                                       'height_0',
+                                       'label_0',
+                                       'left_0',
+                                       'top_0',
+                                       'width_0',
+
+                                       'height_1',
+                                       'label_1',
+                                       'left_1',
+                                       'top_1',
+                                       'width_1',
+
+                                       'height_2',
+                                       'label_2',
+                                       'left_2',
+                                       'top_2',
+                                       'width_2',
+
+                                       'height_3',
+                                       'label_3',
+                                       'left_3',
+                                       'top_3',
+                                       'width_3',
+
+                                       'height_4',
+                                       'label_4',
+                                       'left_4',
+                                       'top_4',
+                                       'width_4',
+
+                                       'height_5',
+                                       'label_5',
+                                       'left_5',
+                                       'top_5',
+                                       'width_5',
+                                       ])
+    
+    return full_ds_
+
+first_ds_train_full_df = to_full_df(first_ds_train_images_df, train_bbox_data)
+first_ds_test_full_df = to_full_df(first_ds_test_images_df, test_bbox_data)
+
+def no_more_than_two_digits(_full_df):
+
+    _2_digits_df = _full_df[_full_df['height_2'] == 0.0].reset_index()
+
+    _2_digits_df = _2_digits_df.drop(columns = [
+                                                'height_2',
+                                                'label_2',
+                                                'left_2',
+                                                'top_2',
+                                                'width_2',
+
+                                                'height_3',
+                                                'label_3',
+                                                'left_3',
+                                                'top_3',
+                                                'width_3',
+
+                                                'height_4',
+                                                'label_4',
+                                                'left_4',
+                                                'top_4',
+                                                'width_4',
+
+                                                'height_5',
+                                                'label_5',
+                                                'left_5',
+                                                'top_5',
+                                                'width_5'
+                                                ]) 
+    
+    return _2_digits_df
+
+first_ds_train_2_digits_df = no_more_than_two_digits(first_ds_train_full_df)
+first_ds_test_2_digits_df = no_more_than_two_digits(first_ds_test_full_df)
+
+first_ds_train_2_digits_df.head()
 
 """### Задание 3
 
