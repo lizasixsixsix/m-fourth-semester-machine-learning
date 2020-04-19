@@ -27,6 +27,10 @@ Original file is located at
 Будем брать первые `MAX_LENGTH` слов, а если в отзыве слов меньше, чем это число, то применять паддинг.
 """
 
+import warnings
+
+warnings.filterwarnings('ignore')
+
 from google.colab import drive
 
 drive.mount('/content/drive', force_remount = True)
@@ -78,7 +82,8 @@ import string
 import re
 
 def tokenize_string(_string):
-    return  [tok_.lower() for tok_ in word_tokenize(_string) if not re.fullmatch('[' + string.punctuation + ']+', tok_)]
+    return  [tok_.lower() for tok_ in word_tokenize(_string)
+             if not re.fullmatch('[' + string.punctuation + ']+', tok_)]
 
 def pad(A, length):
     arr = np.empty(length, dtype = STRING_DTYPE)
@@ -99,7 +104,8 @@ def encode_and_tokenize(_dataframe):
 
     data_dict_ = { 'label': llll, 'tokens': tttt }
 
-    encoded_and_tokenized_ = pd.DataFrame(data_dict_, columns = ['label', 'tokens'])
+    encoded_and_tokenized_ = pd.DataFrame(data_dict_,
+                                          columns = ['label', 'tokens'])
 
     return encoded_and_tokenized_
 
@@ -119,7 +125,8 @@ def get_tokens_list(_dataframe):
                 
     return [t for t, _ in tokens_counter_.most_common(LIMIT_OF_TOKENS)]
 
-tokens_list = get_tokens_list(pd.concat([df_train_tokenized, df_test_tokenized]))
+tokens_list = get_tokens_list(pd.concat([df_train_tokenized,
+                                         df_test_tokenized]))
 
 word_to_int_dict = {}
 
@@ -154,9 +161,10 @@ df_test_intized = encode_and_tokenize(df_test_tokenized)
 
 ! pip install tensorflow-gpu --pre --quiet
 
-! pip show tensorflow-gpu
-
 import tensorflow as tf
+
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
 from tensorflow import keras
 
 # To fix memory leak: https://github.com/tensorflow/tensorflow/issues/33009
@@ -179,8 +187,8 @@ from tensorflow.keras.layers import Bidirectional, LSTM, Dense
 
 model = tf.keras.Sequential()
 
-model.add(Bidirectional(LSTM(100, return_sequences = False), merge_mode = 'concat',
-          input_shape = (MAX_LENGTH, 1)))
+model.add(Bidirectional(LSTM(100, return_sequences = False),
+                        merge_mode = 'concat', input_shape = (MAX_LENGTH, 1)))
 model.add(Dense(1, activation = 'sigmoid'))
 
 model.compile(optimizer = 'adam',
@@ -189,50 +197,68 @@ model.compile(optimizer = 'adam',
 
 model.summary()
 
-X_train_intized = np.asarray(list(df_train_intized['ints'].values), dtype = float)[..., np.newaxis]
-X_test_intized = np.asarray(list(df_test_intized['ints'].values), dtype = float)[..., np.newaxis]
+X_train_intized = np.asarray(list(df_train_intized['ints'].values),
+                             dtype = float)[..., np.newaxis]
+X_test_intized = np.asarray(list(df_test_intized['ints'].values),
+                            dtype = float)[..., np.newaxis]
 
 y_train_intized = np.asarray(list(df_train_intized['label'].values))
 y_test_intized = np.asarray(list(df_test_intized['label'].values))
 
-history = model.fit(x = X_train_intized, y = y_train_intized, validation_split = 0.15, epochs = 20)
+history = model.fit(x = X_train_intized, y = y_train_intized, epochs = 20,
+                    validation_split = 0.15, verbose = 0)
 
 # Commented out IPython magic to ensure Python compatibility.
 # %matplotlib inline
 
 import matplotlib.pyplot as plt
-
 import seaborn as sns
-
 from matplotlib import rcParams
 
-rcParams['figure.figsize'] = 11.7, 8.27
+rcParams['figure.figsize'] = 8, 6
 
 sns.set()
-
 sns.set_palette(sns.color_palette('hls'))
 
-plt.plot(history.history['accuracy'])
-plt.plot(history.history['val_accuracy'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'upper left')
-plt.show()
+def plot_accuracy(_history,
+                  _train_acc_name = 'accuracy',
+                  _val_acc_name = 'val_accuracy'):
 
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'upper left')
-plt.show()
+    plt.plot(_history.history[_train_acc_name])
+    plt.plot(_history.history[_val_acc_name])
+
+    plt.title('Model accuracy')
+
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+
+    plt.legend(['Train', 'Validation'], loc = 'right')
+
+    plt.show()
+
+def plot_loss(_history):
+
+    plt.plot(_history.history['loss'])
+    plt.plot(_history.history['val_loss'])
+
+    plt.title('Model loss')
+
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+
+    plt.legend(['Train', 'Validation'], loc = 'right')
+
+    plt.show()
+
+plot_accuracy(history)
+
+plot_loss(history)
 
 results = model.evaluate(X_test_intized, y_test_intized)
 
 print('Test loss, test accuracy:', results)
 
-"""На валидационной выборке удалось достичь точности 56%.
+"""На валидационной выборке удалось достичь точности 57%.
 
 ### Задание 3
 
@@ -252,15 +278,20 @@ print('Test loss, test accuracy:', results)
 
 """Создадим уменьшенный словарь, содержащий только встреченные токены, чтобы уменьшить нагрузку на _Google Drive_:"""
 
-# def build_vectors_dict(_actual_tokens, _vectors_file_path, _unknown_token = 'unknown'):
+# def build_vectors_dict(_actual_tokens, _vectors_file_path,
+#                        _unknown_token = 'unknown'):
 
-#     vec_data_ = pd.read_csv(_vectors_file_path, sep = ' ', header = None, skiprows = [9])
+#     vec_data_ = pd.read_csv(_vectors_file_path, sep = ' ',
+#                             header = None, skiprows = [9])
         
-#     actual_vectors_ = [x for x in vec_data_.values if x[0] in _actual_tokens or x[0] == _unknown_token]
+#     actual_vectors_ = [x for x in vec_data_.values
+#                        if x[0] in _actual_tokens or x[0] == _unknown_token]
 
 #     return actual_vectors_
 
-# actual_vectors = build_vectors_dict(tokens_list, os.path.join(VECTORS_LOCAL_DIR_NAME, VECTORS_FILE_NAME))
+# actual_vectors = build_vectors_dict(tokens_list,
+#                                     os.path.join(VECTORS_LOCAL_DIR_NAME,
+#                                                  VECTORS_FILE_NAME))
 
 # vectors_np = np.array(actual_vectors)
 
@@ -272,7 +303,8 @@ print('Test loss, test accuracy:', results)
 
 # np.savez_compressed(vectors_dict_file_path, vectors_dict, allow_pickle = True)
 
-vectors_dict_file_path = './drive/My Drive/Colab Files/mo-2/word-vec-dict-56485-items.npz'
+vectors_dict_file_path = (
+    './drive/My Drive/Colab Files/mo-2/word-vec-dict-56485-items.npz')
 
 vectors_dict_data = np.load(vectors_dict_file_path, allow_pickle = True)
 
@@ -302,16 +334,19 @@ def vectorize(_dataframe):
 df_train_vectorized = vectorize(df_train_tokenized)
 df_test_vectorized = vectorize(df_test_tokenized)
 
-X_train_vectorized = np.asarray(list(df_train_vectorized['vectors'].values), dtype = float)
-X_test_vectorized = np.asarray(list(df_test_vectorized['vectors'].values), dtype = float)
+X_train_vectorized = np.asarray(list(df_train_vectorized['vectors'].values),
+                                dtype = float)
+X_test_vectorized = np.asarray(list(df_test_vectorized['vectors'].values),
+                               dtype = float)
 
 y_train_vectorized = np.asarray(list(df_train_vectorized['label'].values))
 y_test_vectorized = np.asarray(list(df_test_vectorized['label'].values))
 
 model_2 = tf.keras.Sequential()
 
-model_2.add(Bidirectional(LSTM(100, return_sequences = False), merge_mode = 'concat',
-            input_shape = (MAX_LENGTH, VECTORS_LENGTH)))
+model_2.add(Bidirectional(LSTM(100, return_sequences = False),
+                          merge_mode = 'concat',
+                          input_shape = (MAX_LENGTH, VECTORS_LENGTH)))
 model_2.add(Dense(1, activation = 'sigmoid'))
 
 model_2.compile(optimizer = 'adam',
@@ -320,23 +355,12 @@ model_2.compile(optimizer = 'adam',
 
 model_2.summary()
 
-history_2 = model_2.fit(x = X_train_vectorized, y = y_train_vectorized, validation_split = 0.15, epochs = 20)
+history_2 = model_2.fit(x = X_train_vectorized, y = y_train_vectorized,
+                        epochs = 20, validation_split = 0.15, verbose = 0)
 
-plt.plot(history_2.history['accuracy'])
-plt.plot(history_2.history['val_accuracy'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'upper left')
-plt.show()
+plot_accuracy(history_2)
 
-plt.plot(history_2.history['loss'])
-plt.plot(history_2.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'upper left')
-plt.show()
+plot_loss(history_2)
 
 results_2 = model_2.evaluate(X_test_vectorized, y_test_vectorized)
 
@@ -351,8 +375,9 @@ print('Test loss, test accuracy:', results_2)
 
 model_3 = tf.keras.Sequential()
 
-model_3.add(Bidirectional(LSTM(5, return_sequences = True), merge_mode = 'concat',
-            input_shape = (MAX_LENGTH, VECTORS_LENGTH)))
+model_3.add(Bidirectional(LSTM(5, return_sequences = True),
+                          merge_mode = 'concat', 
+                          input_shape = (MAX_LENGTH, VECTORS_LENGTH)))
 model_3.add(LSTM(1, return_sequences = False))
 model_3.add(Dense(10, activation = 'linear'))
 model_3.add(Dense(1, activation = 'sigmoid'))
@@ -363,29 +388,18 @@ model_3.compile(optimizer = 'adam',
 
 model_3.summary()
 
-history_3 = model_3.fit(x = X_train_vectorized, y = y_train_vectorized, validation_split = 0.15, epochs = 20)
+history_3 = model_3.fit(x = X_train_vectorized, y = y_train_vectorized,
+                        validation_split = 0.15, epochs = 20, verbose = 0)
 
-plt.plot(history_3.history['accuracy'])
-plt.plot(history_3.history['val_accuracy'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'upper left')
-plt.show()
+plot_accuracy(history_3)
 
-plt.plot(history_3.history['loss'])
-plt.plot(history_3.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc = 'upper left')
-plt.show()
+plot_loss(history_3)
 
 results_3 = model_3.evaluate(X_test_vectorized, y_test_vectorized)
 
 print('Test loss, test accuracy:', results_3)
 
-"""Добавление ещё одного рекуррентного слоя ненамного улучшило результат &mdash; точность 75% на тестовой выборке.
+"""Добавление ещё одного рекуррентного слоя ненамного улучшило результат &mdash; точность 76% на тестовой выборке.
 
 ### Задание 5
 
@@ -393,5 +407,5 @@ print('Test loss, test accuracy:', results_3)
 
 Какой максимальный результат удалось получить на контрольной выборке?
 
-На своих моделях удалось достигнуть максимальной точности 76%.
+На своих моделях удалось достигнуть максимальной точности 76% на тестовой выборке.
 """
