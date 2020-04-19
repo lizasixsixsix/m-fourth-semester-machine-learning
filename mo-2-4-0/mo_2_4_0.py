@@ -553,7 +553,107 @@ def no_more_than_two_digits(_full_df):
 first_ds_train_2_digits_df = no_more_than_two_digits(first_ds_train_full_df)
 first_ds_test_2_digits_df = no_more_than_two_digits(first_ds_test_full_df)
 
-first_ds_train_2_digits_df.head()
+from math import ceil
+
+def get_image_central_square(_image):
+
+    dim_0 = _image.shape[0]
+    dim_1 = _image.shape[1]
+
+    if dim_0 == 0 or dim_1 == 0:
+
+        print(_image.shape)
+
+    cutoff_ = ceil(abs(dim_0 - dim_1) / 2)
+
+    if dim_0 > dim_1:
+        cut_image_ = _image[cutoff_:-cutoff_,
+                            :,
+                            :]
+    elif dim_0 < dim_1:
+        cut_image_ = _image[:,
+                            cutoff_:-cutoff_,
+                            :]
+    else:
+        cut_image_ = _image[:,
+                            :,
+                            :]
+
+    return cut_image_
+
+NEW_IMAGE_DIM = 100
+
+import cv2
+
+def resize_image(_image, _dim_0 = NEW_IMAGE_DIM, _dim_1 = NEW_IMAGE_DIM):
+
+    try:
+        resized_ = cv2.resize(_image, dsize = (_dim_0, _dim_1),
+                              interpolation = cv2.INTER_CUBIC)
+    except:
+        print(_image.shape)
+    
+    return resized_
+
+def process_image(_image):
+
+    squared_ = get_image_central_square(_image)
+
+    resized_ = resize_image(squared_)
+
+    return resized_
+
+def get_digits_n_from_row(_row):
+
+    if _row['height_1'] != 0.0:
+        return 2
+
+    if _row['height_0'] != 0.0:
+        return 1
+
+    return 0
+
+def to_new_format_dataframe(_dataframe):
+
+    df_copy_ = _dataframe.copy()
+    
+    rrrr = df_copy_.apply(lambda row: process_image(row['data']), axis = 1)
+
+    df_copy_.drop(columns = ['data'])
+
+    df_copy_['data'] = rrrr
+
+    nnnn = df_copy_.apply(lambda row: get_digits_n_from_row(row), axis = 1)
+
+    df_copy_['digits_n'] = nnnn
+
+    df_copy_['digit_0'] = df_copy_['label_0'].astype(int)
+    df_copy_['digit_1'] = df_copy_['label_1'].astype(int)
+
+    df_copy_ = df_copy_.drop(columns = [
+                                        'height_0',
+                                        'label_0',
+                                        'left_0',
+                                        'top_0',
+                                        'width_0',
+
+                                        'height_1',
+                                        'label_1',
+                                        'left_1',
+                                        'top_1',
+                                        'width_1'
+                                       ])
+
+    return df_copy_
+
+train_resized_df = to_new_format_dataframe(first_ds_train_2_digits_df)
+test_resized_df = to_new_format_dataframe(first_ds_test_2_digits_df)
+
+plt.imshow(train_resized_df['data'][0])
+
+plt.show()
+
+train_resized_df['digits_n'][0], train_resized_df['digit_0'][0], train_resized_df['digit_1'][0]
 
 """### Задание 3
 
