@@ -57,6 +57,10 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
+from google.colab import drive
+
+drive.mount('/content/drive', force_remount = True)
+
 ! pip install tensorflow-gpu --pre --quiet
 
 import tensorflow as tf
@@ -150,10 +154,12 @@ def plot_accuracy(_history,
 
     plt.show()
 
-def plot_loss(_history):
+def plot_loss(_history,
+              _train_loss_name = 'loss',
+              _val_loss_name = 'val_loss'):
 
-    plt.plot(_history.history['loss'])
-    plt.plot(_history.history['val_loss'])
+    plt.plot(_history.history[_train_loss_name])
+    plt.plot(_history.history[_val_loss_name])
 
     plt.title('Model loss')
 
@@ -305,7 +311,7 @@ print('Test loss, test accuracy:', results)
 
 """Здесь в модели изменилось то, что добавился ещё один класс &mdash; _нет цифры_.
 
-Эти данные более сложны для распознавания, что повлияло на результат &mdash; точность распознавания на тестовой выборке составила 84%.
+Эти данные более сложны для распознавания, что повлияло на результат &mdash; точность распознавания на тестовой выборке составила 83%.
 
 ##### Несколько цифр
 
@@ -343,23 +349,29 @@ def dir_to_dataframe(_dir_path):
 
     return dataframe_
 
-first_ds_train_dir = tar_gz_to_dir(DS_URL_FOLDER, TRAIN_DS_NAME, FIRST_DS_EXT,
-                                   'first')
-first_ds_test_dir = tar_gz_to_dir(DS_URL_FOLDER, TEST_DS_NAME, FIRST_DS_EXT,
-                                  'first')
+PROCESS = False
 
-first_ds_train_subdir = os.path.join(first_ds_train_dir, 'train')
-first_ds_test_subdir = os.path.join(first_ds_test_dir, 'test')
+if PROCESS:
+    first_ds_train_dir = tar_gz_to_dir(
+        DS_URL_FOLDER, TRAIN_DS_NAME, FIRST_DS_EXT, 'first')
+    first_ds_test_dir = tar_gz_to_dir(
+        DS_URL_FOLDER, TEST_DS_NAME, FIRST_DS_EXT, 'first')
 
-first_ds_train_images_df = dir_to_dataframe(first_ds_train_subdir)
-first_ds_test_images_df = dir_to_dataframe(first_ds_test_subdir)
+if PROCESS:
+    first_ds_train_subdir = os.path.join(first_ds_train_dir, 'train')
+    first_ds_test_subdir = os.path.join(first_ds_test_dir, 'test')
+
+if PROCESS:
+    first_ds_train_images_df = dir_to_dataframe(first_ds_train_subdir)
+    first_ds_test_images_df = dir_to_dataframe(first_ds_test_subdir)
 
 import h5py
 
-first_ds_train_boxes_mat = h5py.File(
-    os.path.join(first_ds_train_subdir, 'digitStruct.mat'), 'r')
-first_ds_test_boxes_mat = h5py.File(
-    os.path.join(first_ds_test_subdir, 'digitStruct.mat'), 'r')
+if PROCESS:
+    first_ds_train_boxes_mat = h5py.File(
+        os.path.join(first_ds_train_subdir, 'digitStruct.mat'), 'r')
+    first_ds_test_boxes_mat = h5py.File(
+        os.path.join(first_ds_test_subdir, 'digitStruct.mat'), 'r')
 
 import numpy as np
 import pickle
@@ -378,33 +390,40 @@ def mat_to_pickle(_mat_path, _key):
     metadata['width'] = []
 
     def print_attrs(name, obj):
+
         vals = []
+
         if obj.shape[0] == 1:
             vals.append(int(obj[0][0]))
         else:
             for k in range(obj.shape[0]):
+                
                 vals.append(int(f[obj[k][0]][0][0]))
+
         metadata[name].append(vals)
 
     for item in f['/digitStruct/bbox']:
+
         f[item[0]].visititems(print_attrs)
 
     with open('{}.pickle'.format((_key)),'wb') as pf:
+
         pickle.dump(metadata, pf, pickle.HIGHEST_PROTOCOL)
 
-mat_to_pickle(
-    os.path.join(first_ds_train_subdir, 'digitStruct.mat'), 'train_bbox')
-mat_to_pickle(
-    os.path.join(first_ds_test_subdir, 'digitStruct.mat'), 'test_bbox')
+if PROCESS:
+    mat_to_pickle(
+        os.path.join(first_ds_train_subdir, 'digitStruct.mat'), 'train_bbox')
+    mat_to_pickle(
+        os.path.join(first_ds_test_subdir, 'digitStruct.mat'), 'test_bbox')
 
-train_bbox_data = np.load('train_bbox.pickle', allow_pickle = True)
-test_bbox_data = np.load('test_bbox.pickle', allow_pickle = True)
+if PROCESS:
+    train_bbox_data = np.load('train_bbox.pickle', allow_pickle = True)
+    test_bbox_data = np.load('test_bbox.pickle', allow_pickle = True)
 
-plt.imshow(first_ds_train_images_df['data'][0])
+if PROCESS:
+    plt.imshow(first_ds_train_images_df['data'][0])
 
-plt.show()
-
-train_bbox_data['height'][5]
+    plt.show()
 
 MAX_DIGITS = 6
 
@@ -519,8 +538,11 @@ def to_full_df(_ds_images_df, _bbox_data):
     
     return full_ds_
 
-first_ds_train_full_df = to_full_df(first_ds_train_images_df, train_bbox_data)
-first_ds_test_full_df = to_full_df(first_ds_test_images_df, test_bbox_data)
+if PROCESS:
+    first_ds_train_full_df = to_full_df(
+        first_ds_train_images_df, train_bbox_data)
+    first_ds_test_full_df = to_full_df(
+        first_ds_test_images_df, test_bbox_data)
 
 def no_more_than_two_digits(_full_df):
 
@@ -554,8 +576,11 @@ def no_more_than_two_digits(_full_df):
     
     return _2_digits_df
 
-first_ds_train_2_digits_df = no_more_than_two_digits(first_ds_train_full_df)
-first_ds_test_2_digits_df = no_more_than_two_digits(first_ds_test_full_df)
+if PROCESS:
+    first_ds_train_2_digits_df = no_more_than_two_digits(
+        first_ds_train_full_df)
+    first_ds_test_2_digits_df = no_more_than_two_digits(
+        first_ds_test_full_df)
 
 from math import ceil
 
@@ -585,7 +610,7 @@ def get_image_central_square(_image):
 
     return cut_image_
 
-NEW_IMAGE_DIM = 100
+NEW_IMAGE_DIM = 50
 
 import cv2
 
@@ -650,64 +675,59 @@ def to_new_format_dataframe(_dataframe):
 
     return df_copy_
 
-train_resized_df = to_new_format_dataframe(first_ds_train_2_digits_df)
-test_resized_df = to_new_format_dataframe(first_ds_test_2_digits_df)
+if PROCESS:
+    train_resized_df = to_new_format_dataframe(first_ds_train_2_digits_df)
+    test_resized_df = to_new_format_dataframe(first_ds_test_2_digits_df)
 
-plt.imshow(train_resized_df['data'][0])
+if PROCESS:
+    train_resized_df.to_pickle(
+        '/content/drive/My Drive/Colab Files/mo-2/multidigit_train.pkl')
+    test_resized_df.to_pickle(
+        '/content/drive/My Drive/Colab Files/mo-2/multidigit_test.pkl')
+
+train_multidigit_df = pd.read_pickle(
+    '/content/drive/My Drive/Colab Files/mo-2/multidigit_train.pkl')
+test_multidigit_df = pd.read_pickle(
+    '/content/drive/My Drive/Colab Files/mo-2/multidigit_test.pkl')
+
+plt.imshow(train_multidigit_df['data'][0])
 
 plt.show()
 
-print(train_resized_df['digits_n'][0],
-      train_resized_df['digit_0'][0], train_resized_df['digit_1'][0])
-
-train_resized_df.to_pickle("./multidigit_train.pkl")
-test_resized_df.to_pickle("./multidigit_test.pkl")
-
-train_multidigit_df = pd.read_pickle("./multidigit_train.pkl")
-test_multidigit_df = pd.read_pickle("./multidigit_test.pkl")
+print('digits_n:', train_multidigit_df['digits_n'][0], '\t',
+      'digit_0:', train_multidigit_df['digit_0'][0], '\t',
+      'digit_1:', train_multidigit_df['digit_1'][0])
 
 inputs = keras.Input(shape = (NEW_IMAGE_DIM, NEW_IMAGE_DIM, IMAGE_DIM_2_2))
 
 from tensorflow.keras.layers import Dropout, MaxPooling2D
 
-l_d_0_0 = Conv2D(48, kernel_size = (5, 5), strides = (1, 1),
+l_d_0_0 = Conv2D(16, kernel_size = (5, 5), strides = (1, 1),
                 activation = 'relu', padding = 'same')(inputs)
-l_d_0_1 = MaxPooling2D(pool_size = (2, 2), strides = (2, 2),
+l_d_0_1 = MaxPooling2D(pool_size = (2, 2), strides = 2,
                             padding = 'valid')(l_d_0_0)
 l_d_0_2 = Dropout(0.2)(l_d_0_0)
 
-l_d_1_0 = Conv2D(64, kernel_size = (5, 5), strides = (1, 1),
+l_d_1_0 = Conv2D(32, kernel_size = (5, 5), strides = (1, 1),
                 activation = 'relu', padding = 'same')(l_d_0_2)
-l_d_1_1 = MaxPooling2D(pool_size = (2, 2), strides = (2, 2),
+l_d_1_1 = MaxPooling2D(pool_size = (2, 2), strides = 1,
                             padding = 'valid')(l_d_1_0)
 l_d_1_2 = Dropout(0.2)(l_d_1_0)
 
-l_d_2_0 = Conv2D(128, kernel_size = (5, 5), strides = (1, 1),
+l_d_2_0 = Conv2D(64, kernel_size = (5, 5), strides = (1, 1),
                 activation = 'relu', padding = 'same')(l_d_1_2)
-l_d_2_1 = MaxPooling2D(pool_size = (2, 2), strides = (2, 2),
+l_d_2_1 = MaxPooling2D(pool_size = (2, 2), strides = 2,
                             padding = 'valid')(l_d_2_0)
 l_d_2_2 = Dropout(0.2)(l_d_2_0)
 
-# l_d_3_0 = Conv2D(160, kernel_size = (5, 5), strides = (1, 1),
-#                 activation = 'relu', padding = 'same')(l_d_2_2)
-# l_d_3_1 = MaxPooling2D(pool_size = (2, 2), strides = (2, 2),
-#                             padding = 'valid')(l_d_3_0)
-# l_d_3_2 = Dropout(0.2)(l_d_3_0)
-
-# l_d_4_0 = Conv2D(192, kernel_size = (5, 5), strides = (1, 1),
-#                 activation = 'relu', padding = 'same')(l_d_3_2)
-# l_d_4_1 = MaxPooling2D(pool_size = (2, 2), strides = (2, 2),
-#                             padding = 'valid')(l_d_4_0)
-# l_d_4_2 = Dropout(0.2)(l_d_4_0)
-
 l_fl_0 = Flatten()(l_d_2_2)
-l_dense_0 = Dense(1200, activation = 'relu')(l_fl_0)
+l_dense_0 = Dense(2400, activation = 'relu')(l_fl_0)
 
 output_common = Dense(1200, activation = 'relu')(l_dense_0)
 
-digits_n_output = Dense(2, activation = 'softmax', name = 'digits_n_loss')(output_common)
-digit_0_output = Dense(10, activation = 'softmax', name = 'digit_0_loss')(output_common)
-digit_1_output = Dense(11, activation = 'softmax', name = 'digit_1_loss')(output_common)
+digits_n_output = Dense(2, activation = 'softmax', name = 'digits_n')(output_common)
+digit_0_output = Dense(10, activation = 'softmax', name = 'digit_0')(output_common)
+digit_1_output = Dense(11, activation = 'softmax', name = 'digit_1')(output_common)
 
 def digits_n_loss(n_logits, n_labels):
     return tf.reduce_mean(
@@ -722,15 +742,15 @@ def digit_1_loss(digit_1_logits, digit_1_labels):
         tf.compat.v1.losses.softmax_cross_entropy(digit_1_logits, digit_1_labels))
 
 losses = {
-	'digits_n_loss': digits_n_loss,
-    'digit_0_loss': digit_0_loss,
-    'digit_1_loss': digit_1_loss
+	'digits_n': digits_n_loss,
+    'digit_0': digit_0_loss,
+    'digit_1': digit_1_loss
 }
 
 loss_weights = {
-    'digits_n_loss': 1.0,
-    'digit_0_loss': 1.0,
-    'digit_1_loss': 1.0
+    'digits_n': 1.0,
+    'digit_0': 1.0,
+    'digit_1': 1.0
 }
 
 model_3 = keras.Model(inputs = inputs,
@@ -743,32 +763,79 @@ model_3.summary()
 
 keras.utils.plot_model(model_3, 'multidigit.png')
 
-X_multidigit = tf.keras.utils.normalize(np.asarray(list(train_resized_df['data'])), axis = 1)
+X_multidigit = tf.keras.utils.normalize(np.asarray(list(train_multidigit_df['data'])), axis = 1)
 
-y_n_multidigit = (to_categorical(train_resized_df['digits_n']
+y_n_multidigit = (to_categorical(train_multidigit_df['digits_n']
                                  .astype('category')
                                  .cat.codes.astype('int32')))
-y_d_0_multidigit = (to_categorical(train_resized_df['digit_0']
+y_d_0_multidigit = (to_categorical(train_multidigit_df['digit_0']
                                    .astype('category')
                                    .cat.codes.astype('int32')))
-y_d_1_multidigit = (to_categorical(train_resized_df['digit_1']
+y_d_1_multidigit = (to_categorical(train_multidigit_df['digit_1']
                                    .astype('category')
                                    .cat.codes.astype('int32')))
 
-y_multidigit = {
-    'n_labels': y_n_multidigit,
-    'digit_0_labels': y_d_0_multidigit,
-    'digit_1_labels': y_d_1_multidigit
-    }
+y_multidigit = [
+                y_n_multidigit,
+                y_d_0_multidigit,
+                y_d_1_multidigit
+               ]
 
-model_3.compile(optimizer = 'sgd',
+model_3.compile(optimizer = 'adam',
                 loss = losses, loss_weights = loss_weights,
                 metrics = ['categorical_accuracy'])
 
-history = model_3.fit(x = X_multidigit,
-                      y = [n_labels, digit_0_labels, digit_1_labels],
-                      epochs = 10,
-                      validation_split = 0.15)
+history_3 = model_3.fit(x = X_multidigit,
+                        y = y_multidigit,
+                        epochs = 10,
+                        validation_split = 0.15)
+
+plot_accuracy(history_3, 'digits_n_categorical_accuracy', 'val_digits_n_categorical_accuracy')
+
+plot_accuracy(history_3, 'digit_0_categorical_accuracy', 'val_digit_0_categorical_accuracy')
+
+plot_accuracy(history_3, 'digit_1_categorical_accuracy', 'val_digit_1_categorical_accuracy')
+
+plot_loss(history_3, 'digits_n_loss', 'val_digits_n_loss')
+
+plot_loss(history_3, 'digit_0_loss', 'val_digit_0_loss')
+
+plot_loss(history_3, 'digit_1_loss', 'val_digit_1_loss')
+
+X_test_multidigit = tf.keras.utils.normalize(
+    np.asarray(list(test_multidigit_df['data'])), axis = 1)
+
+y_n_test_multidigit = (to_categorical(test_multidigit_df['digits_n']
+                                 .astype('category')
+                                 .cat.codes.astype('int32')))
+y_d_0_test_multidigit = (to_categorical(test_multidigit_df['digit_0']
+                                   .astype('category')
+                                   .cat.codes.astype('int32')))
+y_d_1_test_multidigit = (to_categorical(test_multidigit_df['digit_1']
+                                   .astype('category')
+                                   .cat.codes.astype('int32')))
+
+y_test_multidigit = [
+                     y_n_test_multidigit,
+                     y_d_0_test_multidigit,
+                     y_d_1_test_multidigit
+                    ]
+
+results_3 = model_3.evaluate(X_test_multidigit, y_test_multidigit)
+
+for i, k in enumerate(history_3.history.keys()):
+    if i < len(results_3):
+        print(k, '\t', results_3[i])
+
+plt.imshow(test_multidigit_df['data'][0])
+
+plt.show()
+
+prediction_3 = model_3.predict(np.asarray([test_multidigit_df['data'][0]]))
+
+print('digits_n:', prediction_3[0].squeeze(), '\n',
+      'digit_0:', prediction_3[1].squeeze(), '\n',
+      'digit_1:', prediction_3[2].squeeze())
 
 """### Задание 3
 
