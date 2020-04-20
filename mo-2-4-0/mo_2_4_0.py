@@ -311,7 +311,7 @@ print('Test loss, test accuracy:', results)
 
 """Здесь в модели изменилось то, что добавился ещё один класс &mdash; _нет цифры_.
 
-Эти данные более сложны для распознавания, что повлияло на результат &mdash; точность распознавания на тестовой выборке составила 83%.
+Эти данные более сложны для распознавания, что повлияло на результат &mdash; точность распознавания на тестовой выборке составила 84%.
 
 ##### Несколько цифр
 
@@ -788,7 +788,8 @@ model_3.compile(optimizer = 'adam',
 history_3 = model_3.fit(x = X_multidigit,
                         y = y_multidigit,
                         epochs = 10,
-                        validation_split = 0.15)
+                        validation_split = 0.15,
+                        verbose = 0)
 
 plot_accuracy(history_3, 'digits_n_categorical_accuracy', 'val_digits_n_categorical_accuracy')
 
