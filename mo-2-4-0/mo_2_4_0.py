@@ -62,6 +62,10 @@ warnings.filterwarnings('ignore')
 import tensorflow as tf
 from tensorflow import keras
 
+# To fix memory leak: https://github.com/tensorflow/tensorflow/issues/33009
+
+tf.compat.v1.disable_eager_execution()
+
 import numpy as np
 
 from tensorflow.keras.datasets import mnist
@@ -653,7 +657,118 @@ plt.imshow(train_resized_df['data'][0])
 
 plt.show()
 
-train_resized_df['digits_n'][0], train_resized_df['digit_0'][0], train_resized_df['digit_1'][0]
+print(train_resized_df['digits_n'][0],
+      train_resized_df['digit_0'][0], train_resized_df['digit_1'][0])
+
+train_resized_df.to_pickle("./multidigit_train.pkl")
+test_resized_df.to_pickle("./multidigit_test.pkl")
+
+train_multidigit_df = pd.read_pickle("./multidigit_train.pkl")
+test_multidigit_df = pd.read_pickle("./multidigit_test.pkl")
+
+inputs = keras.Input(shape = (NEW_IMAGE_DIM, NEW_IMAGE_DIM, IMAGE_DIM_2_2))
+
+from tensorflow.keras.layers import Dropout, MaxPooling2D
+
+l_d_0_0 = Conv2D(48, kernel_size = (5, 5), strides = (1, 1),
+                activation = 'relu', padding = 'same')(inputs)
+l_d_0_1 = MaxPooling2D(pool_size = (2, 2), strides = (2, 2),
+                            padding = 'valid')(l_d_0_0)
+l_d_0_2 = Dropout(0.2)(l_d_0_0)
+
+l_d_1_0 = Conv2D(64, kernel_size = (5, 5), strides = (1, 1),
+                activation = 'relu', padding = 'same')(l_d_0_2)
+l_d_1_1 = MaxPooling2D(pool_size = (2, 2), strides = (2, 2),
+                            padding = 'valid')(l_d_1_0)
+l_d_1_2 = Dropout(0.2)(l_d_1_0)
+
+l_d_2_0 = Conv2D(128, kernel_size = (5, 5), strides = (1, 1),
+                activation = 'relu', padding = 'same')(l_d_1_2)
+l_d_2_1 = MaxPooling2D(pool_size = (2, 2), strides = (2, 2),
+                            padding = 'valid')(l_d_2_0)
+l_d_2_2 = Dropout(0.2)(l_d_2_0)
+
+# l_d_3_0 = Conv2D(160, kernel_size = (5, 5), strides = (1, 1),
+#                 activation = 'relu', padding = 'same')(l_d_2_2)
+# l_d_3_1 = MaxPooling2D(pool_size = (2, 2), strides = (2, 2),
+#                             padding = 'valid')(l_d_3_0)
+# l_d_3_2 = Dropout(0.2)(l_d_3_0)
+
+# l_d_4_0 = Conv2D(192, kernel_size = (5, 5), strides = (1, 1),
+#                 activation = 'relu', padding = 'same')(l_d_3_2)
+# l_d_4_1 = MaxPooling2D(pool_size = (2, 2), strides = (2, 2),
+#                             padding = 'valid')(l_d_4_0)
+# l_d_4_2 = Dropout(0.2)(l_d_4_0)
+
+l_fl_0 = Flatten()(l_d_2_2)
+l_dense_0 = Dense(1200, activation = 'relu')(l_fl_0)
+
+output_common = Dense(1200, activation = 'relu')(l_dense_0)
+
+digits_n_output = Dense(2, activation = 'softmax', name = 'digits_n_loss')(output_common)
+digit_0_output = Dense(10, activation = 'softmax', name = 'digit_0_loss')(output_common)
+digit_1_output = Dense(11, activation = 'softmax', name = 'digit_1_loss')(output_common)
+
+def digits_n_loss(n_logits, n_labels):
+    return tf.reduce_mean(
+        tf.compat.v1.losses.softmax_cross_entropy(n_logits, n_labels))
+    
+def digit_0_loss(digit_0_logits, digit_0_labels):
+    return tf.reduce_mean(
+        tf.compat.v1.losses.softmax_cross_entropy(digit_0_logits, digit_0_labels))
+
+def digit_1_loss(digit_1_logits, digit_1_labels):
+    return tf.reduce_mean(
+        tf.compat.v1.losses.softmax_cross_entropy(digit_1_logits, digit_1_labels))
+
+losses = {
+	'digits_n_loss': digits_n_loss,
+    'digit_0_loss': digit_0_loss,
+    'digit_1_loss': digit_1_loss
+}
+
+loss_weights = {
+    'digits_n_loss': 1.0,
+    'digit_0_loss': 1.0,
+    'digit_1_loss': 1.0
+}
+
+model_3 = keras.Model(inputs = inputs,
+                      outputs = [
+                                 digits_n_output,
+                                 digit_0_output,
+                                 digit_1_output])
+
+model_3.summary()
+
+keras.utils.plot_model(model_3, 'multidigit.png')
+
+X_multidigit = tf.keras.utils.normalize(np.asarray(list(train_resized_df['data'])), axis = 1)
+
+y_n_multidigit = (to_categorical(train_resized_df['digits_n']
+                                 .astype('category')
+                                 .cat.codes.astype('int32')))
+y_d_0_multidigit = (to_categorical(train_resized_df['digit_0']
+                                   .astype('category')
+                                   .cat.codes.astype('int32')))
+y_d_1_multidigit = (to_categorical(train_resized_df['digit_1']
+                                   .astype('category')
+                                   .cat.codes.astype('int32')))
+
+y_multidigit = {
+    'n_labels': y_n_multidigit,
+    'digit_0_labels': y_d_0_multidigit,
+    'digit_1_labels': y_d_1_multidigit
+    }
+
+model_3.compile(optimizer = 'sgd',
+                loss = losses, loss_weights = loss_weights,
+                metrics = ['categorical_accuracy'])
+
+history = model_3.fit(x = X_multidigit,
+                      y = [n_labels, digit_0_labels, digit_1_labels],
+                      epochs = 10,
+                      validation_split = 0.15)
 
 """### Задание 3
 
