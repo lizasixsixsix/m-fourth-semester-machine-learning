@@ -23,10 +23,6 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-import os
-
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
 from google.colab import drive
 
 drive.mount('/content/drive', force_remount = True)
@@ -75,22 +71,6 @@ rcParams['figure.figsize'] = 12, 8
 sns.set()
 sns.set_palette(sns.color_palette('hls'))
 
-def plot_accuracy(_history,
-                  _train_acc_name = 'accuracy',
-                  _val_acc_name = 'val_accuracy'):
-
-    plt.plot(_history.history[_train_acc_name])
-    plt.plot(_history.history[_val_acc_name])
-
-    plt.title('Model accuracy')
-
-    plt.ylabel('Accuracy')
-    plt.xlabel('Epoch')
-
-    plt.legend(['Train', 'Validation'], loc = 'right')
-
-    plt.show()
-
 def plot_loss(_history):
 
     plt.plot(_history.history['loss'])
@@ -131,8 +111,6 @@ plt.show()
 
 from pandas.plotting import autocorrelation_plot
 
-rcParams['figure.figsize'] = 8, 6
-
 autocorrelation_plot(all_df.values.tolist())
 
 plt.title('Autocorrelation plot')
@@ -152,24 +130,24 @@ plt.show()
 
 ! pip install pmdarima --quiet
 
-TEST_PERIOD = 600
+from statsmodels.tsa.arima_model import ARIMA
 
-OBSERVATIONS_PER_CYCLE = 11 * 12
+model = ARIMA(all_df['Monthly Mean Total Sunspot Number'].values,
+              order = (1, 0, 2))
 
-from pmdarima.arima import auto_arima
+model_fit = model.fit(disp = 0)
 
-arima = auto_arima(all_df['Monthly Mean Total Sunspot Number'][:-TEST_PERIOD],
-                   trace = True, error_action = 'ignore',
-                   suppress_warnings = True, seasonal = True,
-                   max_p = 1, max_q = 2,
-                   m = OBSERVATIONS_PER_CYCLE)
+print(model_fit.summary())
 
-arima_forecast = arima.predict(n_periods = TEST_PERIOD)
+residuals = pd.DataFrame(model_fit.resid)
 
-from sklearn.metrics import mean_squared_error
+residuals.plot()
 
-mean_squared_error(all_df['Monthly Mean Total Sunspot Number'][-TEST_PERIOD:],
-                   arima_forecast)
+plt.show()
+
+residuals.plot(kind = 'kde')
+
+plt.show()
 
 """### Задание 4
 
@@ -178,9 +156,19 @@ mean_squared_error(all_df['Monthly Mean Total Sunspot Number'][-TEST_PERIOD:],
 Сначала нужно создать датасет из данных.
 """
 
-! pip install tensorflow-gpu --pre --quiet
+TEST_PERIOD = 600
+
+OBSERVATIONS_PER_CYCLE = 11 * 12
 
 TIME_STEPS = OBSERVATIONS_PER_CYCLE
+
+! pip install tensorflow-gpu --pre --quiet
+
+import tensorflow as tf
+
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
+from tensorflow import keras
 
 import numpy as np
 from datetime import timezone
@@ -189,62 +177,64 @@ def timeseries_to_dataset(_X_ts, _time_steps):
 
     samples_n_ = len(_X_ts) - _time_steps
 
-    print( len(_X_ts))
+    _X_norm = tf.keras.utils.normalize(_X_ts).squeeze()
+
+    print(_X_ts.shape, _X_norm.shape)
 
     X_ = np.zeros((samples_n_, _time_steps))
     y_ = np.zeros((samples_n_, ))
 
     for i in range(samples_n_):
 
-        X_[i] = _X_ts[i:(i + _time_steps)]
+        X_[i] = _X_norm[i:(i + _time_steps)]
 
-        y_[i] = _X_ts[(i + _time_steps)]
+        y_[i] = _X_norm[(i + _time_steps)]
 
     return X_[..., np.newaxis], y_
 
-X, y = timeseries_to_dataset(
-    all_df['Monthly Mean Total Sunspot Number'][:-TEST_PERIOD].values,
+X_as_ds, y_as_ds = timeseries_to_dataset(
+    all_df['Monthly Mean Total Sunspot Number'].values,
     TIME_STEPS)
 
-X_test, y_test = timeseries_to_dataset(
-    all_df['Monthly Mean Total Sunspot Number'][-TEST_PERIOD:].values,
-    TIME_STEPS)
+X, y = X_as_ds[:-TEST_PERIOD], y_as_ds[:-TEST_PERIOD]
 
-import tensorflow as tf
-from tensorflow import keras
+X_test, y_test = X_as_ds[-TEST_PERIOD:], y_as_ds[-TEST_PERIOD:]
+
+print(X.shape, X_test.shape, y.shape, y_test.shape)
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 
 model = tf.keras.Sequential()
 
-model.add(LSTM(8, activation = 'relu', return_sequences = True,
+model.add(LSTM(2, activation = 'relu', return_sequences = True,
                input_shape = X.shape[-2:]))
-model.add(LSTM(8, activation = 'relu'))
+model.add(LSTM(12, activation = 'relu'))
 model.add(Dense(1))
 
 model.compile(optimizer = 'adam',
-              loss = 'mse',
-              metrics = ['accuracy'])
+              loss = 'mse')
 
 model.summary()
 
 history = model.fit(x = X, y = y, epochs = 20, validation_split = 0.15,
                     verbose = 0)
 
-plot_accuracy(history)
+rcParams['figure.figsize'] = 8, 6
 
 plot_loss(history)
 
 results = model.evaluate(X_test, y_test)
 
-print('Test mse, test accuracy:', results)
+print('Test mse:', results)
+
+y_pred = model.predict(X_test[20][np.newaxis, ...])
+
+print(y_pred, y_test[20])
 
 """### Задание 5
 
 Сравните качество прогноза моделей.
 
 Какой максимальный результат удалось получить на контрольной выборке?
-
-Нейронная сеть дала среднеквадратичную ошибку в 4 раза больше, чем _ARIMA_, а точность предсказания вообще равна нулю. Можно сделать вывод, что предсказание временных рядов требует более тонкой настройки архитектуры сетей.
 """
